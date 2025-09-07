@@ -6,6 +6,7 @@ import HomeScreen from '../modules/Home/HomeScreen';
 import SettingsScreen from '../modules/Settings/SettingsScreen';
 import ProfileScreen from '../modules/Profil/ProfileScreen';
 import ClientScreen from '../modules/Client/ClientScreen';
+import MouvementStockScreen from '../modules/MouvementStock/MouvementStockScreen';
 // import Palette from '../screens/Palette';
 // import OrderPlaceholder from '../screens/OrderPlaceholder';
 import { Colors } from '../styles/style';
@@ -25,6 +26,11 @@ function HomeStack() {
         name="Clients" 
         component={ClientScreen} 
         options={{ headerTitle: 'Gestion des clients' }}
+      />
+      <Stack.Screen
+        name="MouvementStock"
+        component={MouvementStockScreen}
+        options={{ headerTitle: 'Mouvements de Stock' }}
       />
       
     </Stack.Navigator>
