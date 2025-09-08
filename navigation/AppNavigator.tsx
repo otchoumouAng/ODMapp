@@ -7,6 +7,8 @@ import SettingsScreen from '../modules/Settings/SettingsScreen';
 import ProfileScreen from '../modules/Profil/ProfileScreen';
 import ClientScreen from '../modules/Client/ClientScreen';
 import MouvementStockScreen from '../modules/MouvementStock/MouvementStockScreen';
+import ReceptionScreen from '../modules/Reception/ReceptionScreen';
+import ExpeditionScreen from '../modules/Expedition/ExpeditionScreen';
 // import Palette from '../screens/Palette';
 // import OrderPlaceholder from '../screens/OrderPlaceholder';
 import { Colors } from '../styles/style';
@@ -31,6 +33,16 @@ function HomeStack() {
         name="MouvementStock"
         component={MouvementStockScreen}
         options={{ headerTitle: 'Mouvements de Stock' }}
+      />
+      <Stack.Screen
+        name="Reception"
+        component={ReceptionScreen}
+        options={{ headerTitle: 'Réception de Lots' }}
+      />
+      <Stack.Screen
+        name="Expedition"
+        component={ExpeditionScreen}
+        options={{ headerTitle: 'Expédition de Lots' }}
       />
       
     </Stack.Navigator>

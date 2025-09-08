@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-
-// This is a placeholder for your actual API service.
-// In a real app, this would be in a dedicated services folder.
-const api = {
-    getMagasins: async (): Promise<any[]> => new Promise(resolve => resolve([{ id: 1, designation: "OTL 1" }, { id: 2, designation: "Magasin B" }])),
-    getExportateurs: async (): Promise<any[]> => new Promise(resolve => resolve([{ id: 17, nom: "AFRICA SOURCING" }, { id: 1, nom: "TOUTON" }])),
-    getSites: async (): Promise<any[]> => new Promise(resolve => resolve([{ id: 21, nom: "ABOISSO" }, { id: 1, nom: "COOPEERATIVE" }])),
-    getMouvementStockTypes: async (): Promise<any[]> => new Promise(resolve => resolve([{ id: 1, designation: "Achat Brousse" }, { id: 2, designation: "Sortie Usinage" }])),
-    getCampagnes: async (): Promise<string[]> => {
-      const mockLots = [{ campagneID: "2023/2024" }, { campagneID: "2022/2023" }];
-      return new Promise(resolve => resolve([...new Set(mockLots.map(lot => lot.campagneID))]));
-    }
-};
+import * as apiService from '../../../services/api';
 
 
 export interface MouvementStockFilters {
@@ -43,11 +31,16 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
 
   useEffect(() => {
     const loadDropdownData = async () => {
-        setMagasins(await api.getMagasins());
-        setExportateurs(await api.getExportateurs());
-        setSites(await api.getSites());
-        setTypes(await api.getMouvementStockTypes());
-        setCampagnes(await api.getCampagnes());
+      try {
+        setMagasins(await apiService.getMagasins());
+        setExportateurs(await apiService.getExportateurs());
+        setSites(await apiService.getSites());
+        setTypes(await apiService.getMouvementStockTypes());
+        setCampagnes(await apiService.getCampagnes());
+      } catch (error) {
+        // In a real app, you might want to show a toast or an error message
+        console.error("Failed to load filter data", error);
+      }
     };
     loadDropdownData();
   }, []);
@@ -137,16 +130,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     marginBottom: 10,
+    height: 50, // Give the container a fixed height
+    justifyContent: 'center', // Center the picker content vertically
   },
   pickerLabel: {
     color: '#666',
     fontSize: 12,
     paddingHorizontal: 10,
-    paddingTop: 5,
+    position: 'absolute', // Position label absolutely to not interfere with picker layout
+    top: 1,
   },
   picker: {
-    height: 40,
     width: '100%',
+    marginTop: 10, // Add margin to avoid overlapping with the label
   },
   input: {
     backgroundColor: 'white',
