@@ -8,6 +8,7 @@ import ProfileScreen from '../modules/Profil/ProfileScreen';
 import MouvementStockScreen from '../modules/MouvementStock/MouvementStockScreen';
 import EntreScreen from '../modules/Entre/EntreScreen';
 import SortieScreen from '../modules/Sortie/SortieScreen';
+import TransfertScreen from '../modules/Sortie/TransfertScreen';
 import StockScreen from '../modules/Stock/StockScreen';
 // import Palette from '../screens/Palette';
 // import OrderPlaceholder from '../screens/OrderPlaceholder';
@@ -38,6 +39,11 @@ function HomeStack() {
         name="Sortie"
         component={SortieScreen}
         options={{ headerTitle: 'Sorie de Lots' }}
+      />
+      <Stack.Screen
+        name="Transfert"
+        component={TransfertScreen}
+        options={{ headerTitle: 'Transfert de Lot' }}
       />
       <Stack.Screen
         name="Stock"

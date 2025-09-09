@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, Button, Alert, TextInput } from 'react-native';
+import { View, Text, Button, Alert, TextInput, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Lot } from '../type';
-import { Styles, Colors } from '../../../styles/style';
+import { Lot, Magasin } from './type';
+import { Styles, Colors } from '../../styles/style';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import * as apiService from '../../services/api';
 
 interface TransfertData {
     operationType: 'transfert' | 'export';
@@ -14,21 +16,11 @@ interface TransfertData {
     nombreSacs?: number;
 }
 
-interface TransfertModalProps {
-  visible: boolean;
-  item: Lot | null;
-  onClose: () => void;
-  onTransfert: (item: Lot, data: TransfertData) => void;
-}
+const TransfertScreen = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const { item } = route.params as { item: Lot };
 
-// Mock data for destination stores
-const mockMagasins = [
-    { id: '101', designation: 'Magasin Central' },
-    { id: '102', designation: 'Dépôt Abidjan' },
-    { id: '103', designation: 'Port de San Pedro' },
-];
-
-const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose, onTransfert }) => {
   const [operationType, setOperationType] = useState<'transfert' | 'export'>('transfert');
   const [transfertMode, setTransfertMode] = useState<'total' | 'partiel'>('total');
   const [destinationMagasinId, setDestinationMagasinId] = useState<string>('');
@@ -36,6 +28,20 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
   const [remorque, setRemorque] = useState('');
   const [nombrePalettes, setNombrePalettes] = useState<number | undefined>(undefined);
   const [nombreSacs, setNombreSacs] = useState<number | undefined>(undefined);
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
+
+  useEffect(() => {
+    const loadMagasins = async () => {
+      try {
+        const data = await apiService.getMagasins();
+        setMagasins(data);
+      } catch (error) {
+        console.error("Failed to load magasins", error);
+        Alert.alert("Erreur", "Impossible de charger la liste des magasins.");
+      }
+    };
+    loadMagasins();
+  }, []);
 
   useEffect(() => {
     if (operationType === 'export') {
@@ -56,10 +62,6 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
     }
   }, [transfertMode, item]);
 
-  if (!item) {
-    return null;
-  }
-
   const handleTransfert = () => {
     if (operationType === 'transfert' && !destinationMagasinId) {
         Alert.alert("Erreur", "Veuillez sélectionner un magasin de destination.");
@@ -76,13 +78,11 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
         nombrePalettes,
     };
 
+    console.log(`Transfert action for lot: ${item.numeroLot} with data:`, data);
     Alert.alert(
-        "Confirmation",
-        `Voulez-vous vraiment continuer avec cette sortie ?`,
-        [
-            { text: "Annuler", style: "cancel" },
-            { text: "Confirmer", onPress: () => onTransfert(item, data) }
-        ]
+        "Succès",
+        `La sortie du lot ${item.numeroLot} a été enregistrée.`,
+        [{ text: "OK", onPress: () => navigation.goBack() }]
     );
   };
 
@@ -103,14 +103,8 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
   );
 
   return (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
-      <View style={Styles.modalCenteredView}>
-        <View style={[Styles.modalView, { alignItems: 'center' }]}>
+    <ScrollView style={Styles.container}>
+      <View style={{ padding: 20 }}>
           <Text style={Styles.modalTitle}>Transférer le Lot</Text>
 
           <Text style={Styles.lotInfo}>Lot: <Text style={Styles.lotInfoBold}>{item.numeroLot}</Text></Text>
@@ -134,8 +128,8 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
                   enabled={operationType === 'transfert'}
               >
                   <Picker.Item label={operationType === 'export' ? "N/A" : "-- Sélectionnez un magasin --"} value="" />
-                  {mockMagasins.map(magasin => (
-                      <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id} />
+                  {magasins.map(magasin => (
+                      <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
                   ))}
               </Picker>
           </View>
@@ -161,13 +155,12 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
           />
 
           <View style={Styles.modalButtonContainer}>
-            <Button title="Annuler" onPress={onClose} color={Colors.secondary} />
+            <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} />
             <Button title="Transférer" onPress={handleTransfert} color={Colors.primary} />
           </View>
         </View>
-      </View>
-    </Modal>
+    </ScrollView>
   );
 };
 
-export default TransfertModal;
+export default TransfertScreen;

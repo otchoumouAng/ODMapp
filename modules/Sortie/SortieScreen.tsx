@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, ActivityIndicator, Alert, Text } from 'react-native';
+import { View, FlatList, ActivityIndicator, Text } from 'react-native';
 import { Colors, Styles } from '../../styles/style';
 import LotCard from '../Entre/components/LotCard'; // Reusing the LotCard
-import TransfertModal from './components/TransfertModal';
 import { Lot } from './type';
+import { useNavigation } from '@react-navigation/native';
 
 // Mock data generation for lots owned by the user
 const createMockUserLots = (): Lot[] => {
@@ -16,8 +16,7 @@ const createMockUserLots = (): Lot[] => {
 const SortieScreen = () => {
   const [userLots, setUserLots] = useState<Lot[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     // Simulate fetching data
@@ -29,24 +28,7 @@ const SortieScreen = () => {
   }, []);
 
   const handleCardPress = (item: Lot) => {
-    setSelectedLot(item);
-    setIsModalVisible(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalVisible(false);
-    setSelectedLot(null);
-  };
-
-  const handleTransfert = (item: Lot, data: any) => {
-    console.log(`Transfert action for lot: ${item.numeroLot} with data:`, data);
-    // Here you would call the real API
-
-    // To simulate the item disappearing from the list after transfer
-    setUserLots(prevLots => prevLots.filter(lot => lot.id !== item.id));
-
-    handleCloseModal();
-    Alert.alert("Succès", `La sortie du lot ${item.numeroLot} a été enregistrée.`);
+    navigation.navigate('Transfert', { item });
   };
 
   if (loading) {
@@ -61,12 +43,6 @@ const SortieScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={Styles.list}
         ListEmptyComponent={<Text style={Styles.emptyText}>Aucun lot à expédier.</Text>}
-      />
-      <TransfertModal
-        visible={isModalVisible}
-        item={selectedLot}
-        onClose={handleCloseModal}
-        onTransfert={handleTransfert}
       />
     </View>
   );
