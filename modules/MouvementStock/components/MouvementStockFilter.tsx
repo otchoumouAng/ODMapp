@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as apiService from '../../../services/api';
+import { getMagasins } from '../../Magasin/routes';
+import { Magasin } from '../../Magasin/type';
 import { Styles, Colors } from '../../../styles/style';
 
 export interface MouvementStockFilters {
@@ -23,7 +25,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
   const [filters, setFilters] = useState<MouvementStockFilters>({});
 
   // State for dropdown data
-  const [magasins, setMagasins] = useState<any[]>([]);
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [exportateurs, setExportateurs] = useState<any[]>([]);
   const [sites, setSites] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
@@ -32,7 +34,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        setMagasins(await apiService.getMagasins());
+        setMagasins(await getMagasins());
         setExportateurs(await apiService.getExportateurs());
         setSites(await apiService.getSites());
         setTypes(await apiService.getMouvementStockTypes());

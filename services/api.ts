@@ -2,7 +2,7 @@ import axios from 'axios';
 import { MouvementStock } from '../modules/MouvementStock/type';
 
 // Create an axios instance with a base URL
-const api = axios.create({
+export const api = axios.create({
   baseURL: 'http://localhost:5104/api',
   timeout: 10000, // 10 second timeout
 });
@@ -37,7 +37,6 @@ const getDropdownData = async (endpoint: string): Promise<any[]> => {
     }
 };
 
-export const getMagasins = () => getDropdownData('magasin');
 export const getExportateurs = () => getDropdownData('exportateur');
 export const getSites = () => getDropdownData('site');
 export const getMouvementStockTypes = () => getDropdownData('mouvementstocktype');

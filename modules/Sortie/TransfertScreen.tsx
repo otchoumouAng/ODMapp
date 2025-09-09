@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, Alert, TextInput, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Lot, Magasin } from './type';
+import { Lot } from './type';
+import { Magasin } from '../Magasin/type';
+import { getMagasins } from '../Magasin/routes';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import * as apiService from '../../services/api';
 
 interface TransfertData {
     operationType: 'transfert' | 'export';
@@ -33,7 +34,7 @@ const TransfertScreen = () => {
   useEffect(() => {
     const loadMagasins = async () => {
       try {
-        const data = await apiService.getMagasins();
+        const data = await getMagasins();
         setMagasins(data);
       } catch (error) {
         console.error("Failed to load magasins", error);
