@@ -38,15 +38,15 @@ const SortieScreen = () => {
     setSelectedLot(null);
   };
 
-  const handleTransfert = (item: Lot, destinationMagasinId: string) => {
-    console.log(`Transfert action for lot: ${item.numeroLot} to magasin ID: ${destinationMagasinId}`);
+  const handleTransfert = (item: Lot, data: any) => {
+    console.log(`Transfert action for lot: ${item.numeroLot} with data:`, data);
     // Here you would call the real API
 
     // To simulate the item disappearing from the list after transfer
     setUserLots(prevLots => prevLots.filter(lot => lot.id !== item.id));
 
     handleCloseModal();
-    Alert.alert("Succès", `Le lot ${item.numeroLot} a été transféré.`);
+    Alert.alert("Succès", `La sortie du lot ${item.numeroLot} a été enregistrée.`);
   };
 
   if (loading) {
