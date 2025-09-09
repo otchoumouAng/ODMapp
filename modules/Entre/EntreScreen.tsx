@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { Colors, Styles } from '../../styles/style';
 import LotCard from './components/LotCard';
 import EntreDetailModal from './components/EntreDetailModal';
 import { Lot } from './type';
@@ -49,16 +50,16 @@ const EntreScreen = () => {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />;
+    return <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />;
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[Styles.container, { backgroundColor: Colors.lightGray }]}>
       <FlatList
         data={lots}
         renderItem={({ item }) => <LotCard item={item} onPress={handleCardPress} />}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={Styles.list}
       />
       <EntreDetailModal
         visible={isModalVisible}
@@ -69,20 +70,5 @@ const EntreScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f2f5',
-  },
-  list: {
-    paddingVertical: 8,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default EntreScreen;

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, Button, Alert } from 'react-native';
+import { Modal, View, Text, Button, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Lot } from '../type';
+import { Styles, Colors } from '../../../styles/style';
 
 interface TransfertModalProps {
   visible: boolean;
@@ -46,19 +47,19 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Transférer le Lot</Text>
+      <View style={Styles.modalCenteredView}>
+        <View style={[Styles.modalView, { alignItems: 'center' }]}>
+          <Text style={Styles.modalTitle}>Transférer le Lot</Text>
 
-          <Text style={styles.lotInfo}>Lot: <Text style={styles.lotInfoBold}>{item.numeroLot}</Text></Text>
-          <Text style={styles.lotInfo}>Poids Net: <Text style={styles.lotInfoBold}>{item.poidsNet.toFixed(2)} kg</Text></Text>
+          <Text style={Styles.lotInfo}>Lot: <Text style={Styles.lotInfoBold}>{item.numeroLot}</Text></Text>
+          <Text style={Styles.lotInfo}>Poids Net: <Text style={Styles.lotInfoBold}>{item.poidsNet.toFixed(2)} kg</Text></Text>
 
-          <View style={styles.pickerContainer}>
-              <Text style={styles.pickerLabel}>Magasin de Destination</Text>
+          <View style={[Styles.filterPickerContainer, { marginTop: 20, marginBottom: 20 }]}>
+              <Text style={Styles.filterPickerLabel}>Magasin de Destination</Text>
               <Picker
                   selectedValue={destinationMagasinId}
                   onValueChange={(itemValue) => setDestinationMagasinId(itemValue)}
-                  style={styles.picker}
+                  style={Styles.filterPicker}
               >
                   <Picker.Item label="-- Sélectionnez un magasin --" value="" />
                   {mockMagasins.map(magasin => (
@@ -67,70 +68,14 @@ const TransfertModal: React.FC<TransfertModalProps> = ({ visible, item, onClose,
               </Picker>
           </View>
 
-          <View style={styles.buttonContainer}>
-            <Button title="Annuler" onPress={onClose} color="#6c757d" />
-            <Button title="Transférer" onPress={handleTransfert} />
+          <View style={Styles.modalButtonContainer}>
+            <Button title="Annuler" onPress={onClose} color={Colors.secondary} />
+            <Button title="Transférer" onPress={handleTransfert} color={Colors.primary} />
           </View>
         </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    width: '90%',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  lotInfo: {
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  lotInfoBold: {
-    fontWeight: 'bold',
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    width: '100%',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  pickerLabel: {
-    fontSize: 12,
-    color: '#666',
-    position: 'absolute',
-    top: -10,
-    left: 10,
-    backgroundColor: 'white',
-    paddingHorizontal: 4,
-  },
-  picker: {
-    height: 50,
-    width: '100%',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 10,
-  }
-});
 
 export default TransfertModal;

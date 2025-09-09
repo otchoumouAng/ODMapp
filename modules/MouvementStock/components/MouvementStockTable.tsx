@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList } from 'react-native';
 import { MouvementStock } from '../type';
 import MouvementStockCard from './MouvementStockCard';
+import { Styles, Colors } from '../../../styles/style';
 
 interface MouvementStockTableProps {
   data: MouvementStock[];
@@ -15,33 +16,16 @@ const MouvementStockTable: React.FC<MouvementStockTableProps> = ({ data, onRowDo
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[Styles.container, { backgroundColor: Colors.lightGray }]}>
         <FlatList
             data={data}
             renderItem={renderItem}
             keyExtractor={(item) => item.ID}
-            contentContainerStyle={styles.list}
-            ListEmptyComponent={<Text style={styles.emptyText}>Aucun mouvement à afficher.</Text>}
+            contentContainerStyle={Styles.list}
+            ListEmptyComponent={<Text style={Styles.emptyText}>Aucun mouvement à afficher.</Text>}
         />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        width: '100%',
-        backgroundColor: '#f0f2f5', // A light background color for the list screen
-    },
-    list: {
-        paddingVertical: 8,
-    },
-    emptyText: {
-        textAlign: 'center',
-        marginTop: 50,
-        fontSize: 16,
-        color: 'gray',
-    }
-});
 
 export default MouvementStockTable;

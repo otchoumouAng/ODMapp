@@ -1,24 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import { Styles, Typography } from '../../styles/style';
 
 const StockScreen = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Stock Screen</Text>
+    <View style={[Styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <Text style={Typography.h1}>Stock Screen</Text>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-});
 
 export default StockScreen;

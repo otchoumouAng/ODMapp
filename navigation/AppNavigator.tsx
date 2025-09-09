@@ -5,7 +5,6 @@ import { House, User, Gear, Users, Package, ShoppingCart } from 'phosphor-react-
 import HomeScreen from '../modules/Home/HomeScreen';
 import SettingsScreen from '../modules/Settings/SettingsScreen';
 import ProfileScreen from '../modules/Profil/ProfileScreen';
-import ClientScreen from '../modules/Client/ClientScreen';
 import MouvementStockScreen from '../modules/MouvementStock/MouvementStockScreen';
 import EntreScreen from '../modules/Entre/EntreScreen';
 import SortieScreen from '../modules/Sortie/SortieScreen';
@@ -24,11 +23,6 @@ function HomeStack() {
         name="HomeMain" 
         component={HomeScreen} 
         options={{ headerTitle: 'Modules' }}
-      />
-      <Stack.Screen 
-        name="Clients" 
-        component={ClientScreen} 
-        options={{ headerTitle: 'Gestion des clients' }}
       />
       <Stack.Screen
         name="MouvementStock"

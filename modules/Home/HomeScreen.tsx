@@ -7,7 +7,6 @@ import { Styles, Colors, Spacing, Typography } from '../../styles/style';
 
 
 const modules = [
-  { id: "clients", title: "Clients", icon: Users, screen: "Clients" },
   { id: "sortie", title: "Sortie", icon: Truck, screen: "Sortie" },
   { id: "entre", title: "Entrée", icon: TrayArrowDown, screen: "Entre" },
   { id: "mouvementStock", title: "Mouvement du Stock", icon: ArrowsLeftRight, screen: "MouvementStock" },

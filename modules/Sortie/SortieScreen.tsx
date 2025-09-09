@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Alert, Text } from 'react-native';
+import { View, FlatList, ActivityIndicator, Alert, Text } from 'react-native';
+import { Colors, Styles } from '../../styles/style';
 import LotCard from '../Entre/components/LotCard'; // Reusing the LotCard
 import TransfertModal from './components/TransfertModal';
 import { Lot } from './type';
@@ -49,17 +50,17 @@ const SortieScreen = () => {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />;
+    return <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />;
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[Styles.container, { backgroundColor: Colors.lightGray }]}>
       <FlatList
         data={userLots}
         renderItem={({ item }) => <LotCard item={item} onPress={handleCardPress} />}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.emptyText}>Aucun lot à expédier.</Text>}
+        contentContainerStyle={Styles.list}
+        ListEmptyComponent={<Text style={Styles.emptyText}>Aucun lot à expédier.</Text>}
       />
       <TransfertModal
         visible={isModalVisible}
@@ -70,26 +71,5 @@ const SortieScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f2f5',
-  },
-  list: {
-    paddingVertical: 8,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-      textAlign: 'center',
-      marginTop: 50,
-      fontSize: 16,
-      color: 'gray',
-  }
-});
 
 export default SortieScreen;

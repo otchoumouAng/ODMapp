@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 
 import MouvementStockFilter, { MouvementStockFilters } from './components/MouvementStockFilter';
 import MouvementStockTable from './components/MouvementStockTable';
 import MouvementStockDetailModal from './components/MouvementStockDetailModal';
 import { MouvementStock } from './type';
 import * as apiService from '../../services/api';
+import { Styles, Colors } from '../../styles/style';
 
 const MouvementStockScreen = () => {
   const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
@@ -59,11 +60,11 @@ const MouvementStockScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={Styles.container}>
       <MouvementStockFilter onFilterChange={handleFilterChange} onReset={handleResetFilters} />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+        <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />
       ) : (
         <MouvementStockTable data={mouvements} onRowDoubleClick={handleRowDoubleClick} />
       )}
@@ -76,17 +77,5 @@ const MouvementStockScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default MouvementStockScreen;

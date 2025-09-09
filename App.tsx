@@ -6,6 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './navigation/AppNavigator';
 import AuthNavigator from './navigation/AuthNavigator';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Styles, Colors } from './styles/style';
 // Note: Please run "npm install react-native-toast-message" to install the required package
 import Toast from 'react-native-toast-message';
 import React, { useContext } from 'react';
@@ -15,8 +16,8 @@ const AppContent: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={[Styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
@@ -37,11 +38,3 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

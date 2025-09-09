@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet, Button, ScrollView } from 'react-native';
+import { Modal, View, Text, Button, ScrollView } from 'react-native';
 import { MouvementStock } from '../type';
+import { Styles, Colors } from '../../../styles/style';
 
 interface MouvementStockDetailModalProps {
   visible: boolean;
@@ -10,9 +11,9 @@ interface MouvementStockDetailModalProps {
 
 const DetailRow: React.FC<{ label: string; value: any }> = ({ label, value }) => (
     value ? (
-        <View style={styles.row}>
-            <Text style={styles.label}>{label}:</Text>
-            <Text style={styles.value}>{String(value)}</Text>
+        <View style={Styles.modalRow}>
+            <Text style={Styles.modalLabel}>{label}:</Text>
+            <Text style={Styles.modalValue}>{String(value)}</Text>
         </View>
     ) : null
 );
@@ -29,10 +30,10 @@ const MouvementStockDetailModal: React.FC<MouvementStockDetailModalProps> = ({ v
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>Détails du Mouvement</Text>
-          <ScrollView style={styles.scrollView}>
+      <View style={Styles.modalCenteredView}>
+        <View style={Styles.modalView}>
+          <Text style={Styles.modalTitle}>Détails du Mouvement</Text>
+          <ScrollView style={Styles.modalScrollView}>
             <DetailRow label="ID" value={item.ID} />
             <DetailRow label="Date" value={new Date(item.DateMouvement).toLocaleString()} />
             <DetailRow label="Magasin" value={item.MagasinNom} />
@@ -56,64 +57,11 @@ const MouvementStockDetailModal: React.FC<MouvementStockDetailModalProps> = ({ v
             <DetailRow label="Commentaire" value={item.Commentaire} />
             <DetailRow label="Créé par" value={`${item.CreationUtilisateur} le ${new Date(item.CreationDate).toLocaleDateString()}`} />
           </ScrollView>
-          <Button title="Fermer" onPress={onClose} />
+          <Button title="Fermer" onPress={onClose} color={Colors.primary} />
         </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    width: '90%',
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-  },
-  scrollView: {
-    width: '100%',
-    marginBottom: 15,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    width: '100%',
-  },
-  label: {
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-  },
-  value: {
-    color: '#555',
-    flex: 2,
-    textAlign: 'left',
-  },
-});
 
 export default MouvementStockDetailModal;
