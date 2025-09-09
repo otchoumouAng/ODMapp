@@ -1,10 +1,12 @@
 import axios from 'axios';
 import { MouvementStock } from '../modules/MouvementStock/type';
+import { baseUrl } from '../config';
+
 
 // Create an axios instance with a base URL
 export const api = axios.create({
-  baseURL: 'http://localhost:5104/api',
-  timeout: 10000, // 10 second timeout
+  baseURL: baseUrl,
+  timeout: 10000,
 });
 
 // --- API Service Functions ---
