@@ -43,6 +43,7 @@ const TransfertScreen = () => {
     loadMagasins();
   }, []);
 
+
   useEffect(() => {
     if (operationType === 'export') {
       setDestinationMagasinId('N/A');
@@ -50,6 +51,7 @@ const TransfertScreen = () => {
       setDestinationMagasinId('');
     }
   }, [operationType]);
+
 
   useEffect(() => {
     if (transfertMode === 'total' && item) {
@@ -61,6 +63,7 @@ const TransfertScreen = () => {
       setNombrePalettes(undefined);
     }
   }, [transfertMode, item]);
+
 
   const handleTransfert = () => {
     if (operationType === 'transfert' && !destinationMagasinId) {
@@ -104,7 +107,7 @@ const TransfertScreen = () => {
 
   return (
     <ScrollView style={Styles.container}>
-      <View style={{ padding: 20 }}>
+      <View style={{ padding: 20, marginTop:36 }}>
           <Text style={Styles.modalTitle}>Transférer le Lot</Text>
 
           <Text style={Styles.lotInfo}>Lot: <Text style={Styles.lotInfoBold}>{item.numeroLot}</Text></Text>
