@@ -1,4 +1,4 @@
-// Route definitions for the Expedition module.
+// Route definitions for the Sortie module.
 export const EXPEDITION_ROUTES = {
-  LIST: 'Expedition',
+  LIST: 'Sortie',
 };
