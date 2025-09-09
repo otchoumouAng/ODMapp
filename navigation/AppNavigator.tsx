@@ -43,7 +43,7 @@ function HomeStack() {
       <Stack.Screen
         name="Transfert"
         component={TransfertScreen}
-        options={{ headerTitle: 'Transfert de Lot' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Stock"

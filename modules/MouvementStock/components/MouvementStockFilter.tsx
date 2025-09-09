@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as apiService from '../../../services/api';
-import { getMagasins } from '../../Magasin/routes';
-import { Magasin } from '../../Magasin/type';
+import { getMagasins } from '../../Sortie/routes';
+import { Magasin } from '../../Sortie/type';
 import { Styles, Colors } from '../../../styles/style';
 
 export interface MouvementStockFilters {

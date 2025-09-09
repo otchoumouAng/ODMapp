@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, Alert, TextInput, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Lot } from './type';
-import { Magasin } from '../Magasin/type';
-import { getMagasins } from '../Magasin/routes';
+import { Lot, Magasin } from './type';
+import { getMagasins } from './routes';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
