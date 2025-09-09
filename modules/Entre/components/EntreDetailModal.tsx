@@ -2,11 +2,11 @@ import React from 'react';
 import { Modal, View, Text, StyleSheet, Button, ScrollView, Alert } from 'react-native';
 import { Lot } from '../type';
 
-interface ReceptionDetailModalProps {
+interface EntreDetailModalProps {
   visible: boolean;
   item: Lot | null;
   onClose: () => void;
-  onReception: (item: Lot) => void;
+  onEntre: (item: Lot) => void;
 }
 
 const DetailRow: React.FC<{ label: string; value?: any }> = ({ label, value }) => (
@@ -18,19 +18,19 @@ const DetailRow: React.FC<{ label: string; value?: any }> = ({ label, value }) =
     ) : null
 );
 
-const ReceptionDetailModal: React.FC<ReceptionDetailModalProps> = ({ visible, item, onClose, onReception }) => {
+const EntreDetailModal: React.FC<EntreDetailModalProps> = ({ visible, item, onClose, onEntre }) => {
   if (!item) {
     return null;
   }
 
-  const handleReception = () => {
+  const handleEntre = () => {
     // Simulate the reception action
     Alert.alert(
         "Confirmation",
-        `Voulez-vous vraiment réceptionner le lot ${item.numeroLot} ?`,
+        `Voulez-vous vraiment entrer le lot ${item.numeroLot} ?`,
         [
             { text: "Annuler", style: "cancel" },
-            { text: "Confirmer", onPress: () => onReception(item) }
+            { text: "Confirmer", onPress: () => onEntre(item) }
         ]
     );
   };
@@ -59,7 +59,7 @@ const ReceptionDetailModal: React.FC<ReceptionDetailModalProps> = ({ visible, it
           </ScrollView>
           <View style={styles.buttonContainer}>
             <Button title="Fermer" onPress={onClose} color="#6c757d" />
-            <Button title="RECEPTIONNER" onPress={handleReception} color="#28a745" />
+            <Button title="ENTRER" onPress={handleEntre} color="#28a745" />
           </View>
         </View>
       </View>
@@ -118,4 +118,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default ReceptionDetailModal;
+export default EntreDetailModal;

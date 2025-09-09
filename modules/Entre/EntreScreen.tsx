@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
 import LotCard from './components/LotCard';
-import ReceptionDetailModal from './components/ReceptionDetailModal';
+import EntreDetailModal from './components/EntreDetailModal';
 import { Lot } from './type';
 
 // Mock data generation for lots
@@ -12,7 +12,7 @@ const createMockLots = (): Lot[] => {
     ];
 };
 
-const ReceptionScreen = () => {
+const EntreScreen = () => {
   const [lots, setLots] = useState<Lot[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
@@ -37,15 +37,15 @@ const ReceptionScreen = () => {
     setSelectedLot(null);
   };
 
-  const handleReception = (item: Lot) => {
-    console.log(`Reception action triggered for lot: ${item.numeroLot}`);
+  const handleEntre = (item: Lot) => {
+    console.log(`Entre action triggered for lot: ${item.numeroLot}`);
     // Here you would call the real API
 
     // To simulate the item disappearing from the list after reception
     setLots(prevLots => prevLots.filter(lot => lot.id !== item.id));
 
     handleCloseModal();
-    Alert.alert("Succès", `Le lot ${item.numeroLot} a été réceptionné.`);
+    Alert.alert("Succès", `Le lot ${item.numeroLot} a été entré.`);
   };
 
   if (loading) {
@@ -60,11 +60,11 @@ const ReceptionScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
       />
-      <ReceptionDetailModal
+      <EntreDetailModal
         visible={isModalVisible}
         item={selectedLot}
         onClose={handleCloseModal}
-        onReception={handleReception}
+        onEntre={handleEntre}
       />
     </View>
   );
@@ -85,4 +85,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ReceptionScreen;
+export default EntreScreen;

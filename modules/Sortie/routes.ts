@@ -1,4 +1,4 @@
 // Route definitions for the Sortie module.
-export const EXPEDITION_ROUTES = {
+export const SORTIE_ROUTES = {
   LIST: 'Sortie',
 };

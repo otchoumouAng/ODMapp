@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, FlatList, ActivityIndicator, Alert, Text } from 'react-native';
-import LotCard from '../Reception/components/LotCard'; // Reusing the LotCard
+import LotCard from '../Entre/components/LotCard'; // Reusing the LotCard
 import TransfertModal from './components/TransfertModal';
 import { Lot } from './type';
 

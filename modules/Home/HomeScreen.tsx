@@ -1,16 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Users, Truck, TrayArrowDown, ArrowsLeftRight } from "phosphor-react-native";
+import { Users, Truck, TrayArrowDown, ArrowsLeftRight, Package } from "phosphor-react-native";
 import { Styles, Colors, Spacing, Typography } from '../../styles/style';
 
 
 
 const modules = [
   { id: "clients", title: "Clients", icon: Users, screen: "Clients" },
-  { id: "expedition", title: "Expédition", icon: Truck, screen: "Expedition" },
-  { id: "reception", title: "Réception", icon: TrayArrowDown, screen: "Reception" },
+  { id: "sortie", title: "Sortie", icon: Truck, screen: "Sortie" },
+  { id: "entre", title: "Entrée", icon: TrayArrowDown, screen: "Entre" },
   { id: "mouvementStock", title: "Mouvement du Stock", icon: ArrowsLeftRight, screen: "MouvementStock" },
+  { id: "stock", title: "Stock", icon: Package, screen: "Stock" },
 ];
 
 export default function HomeScreen() {

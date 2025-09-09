@@ -7,8 +7,9 @@ import SettingsScreen from '../modules/Settings/SettingsScreen';
 import ProfileScreen from '../modules/Profil/ProfileScreen';
 import ClientScreen from '../modules/Client/ClientScreen';
 import MouvementStockScreen from '../modules/MouvementStock/MouvementStockScreen';
-import ReceptionScreen from '../modules/Reception/ReceptionScreen';
+import EntreScreen from '../modules/Entre/EntreScreen';
 import SortieScreen from '../modules/Sortie/SortieScreen';
+import StockScreen from '../modules/Stock/StockScreen';
 // import Palette from '../screens/Palette';
 // import OrderPlaceholder from '../screens/OrderPlaceholder';
 import { Colors } from '../styles/style';
@@ -35,14 +36,19 @@ function HomeStack() {
         options={{ headerTitle: 'Mouvements de Stock' }}
       />
       <Stack.Screen
-        name="Reception"
-        component={ReceptionScreen}
-        options={{ headerTitle: 'Réception de Lots' }}
+        name="Entre"
+        component={EntreScreen}
+        options={{ headerTitle: 'Entrée de Lots' }}
       />
       <Stack.Screen
         name="Sortie"
         component={SortieScreen}
         options={{ headerTitle: 'Sorie de Lots' }}
+      />
+      <Stack.Screen
+        name="Stock"
+        component={StockScreen}
+        options={{ headerTitle: 'Stock' }}
       />
       
     </Stack.Navigator>
