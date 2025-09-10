@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { MouvementStock } from '../modules/MouvementStock/type';
-import { baseUrl } from '../config';
-
+import { baseUrl } from '../../config';
+import { Magasin } from './type';
 
 // Create an axios instance with a base URL
 export const api = axios.create({
@@ -10,6 +10,28 @@ export const api = axios.create({
 });
 
 // --- API Service Functions ---
+const handleNetworkError = (error: any) => {
+  if (error.response) {
+    return new Error(`Erreur serveur: ${error.response.status} - ${error.response.data?.message || 'Pas de détails'}`);
+  } else if (error.request) {
+    return new Error('Pas de réponse du serveur. Vérifiez votre connexion réseau.' + error.response);
+  } else {
+    return new Error('Erreur de configuration de la requête: ' + error.message);
+  }
+};
+
+/**
+ * Fetches a list of items for a dropdown.
+ * @param endpoint - The API endpoint to fetch from (e.g., 'magasin', 'exportateur').
+ */
+const getDropdownData = async (endpoint: string): Promise<any[]> => {
+    try {
+        const response = await api.get(`/${endpoint}`);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error);
+    }
+};
 
 /**
  * Fetches the list of stock movements with optional filters.
@@ -25,32 +47,22 @@ export const getMouvements = async (params: URLSearchParams): Promise<MouvementS
   }
 };
 
-/**
- * Fetches a list of items for a dropdown.
- * @param endpoint - The API endpoint to fetch from (e.g., 'magasin', 'exportateur').
- */
-const getDropdownData = async (endpoint: string): Promise<any[]> => {
-    try {
-        const response = await api.get(`/${endpoint}`);
-        return response.data;
-    } catch (error) {
-        console.error(`Error fetching data for ${endpoint}:`, error);
-        throw error;
-    }
-};
-
 export const getExportateurs = () => getDropdownData('exportateur');
 export const getSites = () => getDropdownData('site');
 export const getMouvementStockTypes = () => getDropdownData('mouvementstocktype');
+export const getMagasins = () => getDropdownData('magasin');
+export const getCertifications = () => getDropdownData('certification'); // Assurez-vous que cette route existe si vous en avez besoin ailleurs
+
+// ## NOUVELLE FONCTION AJOUTÉE ##
+export const getLotTypes = () => getDropdownData('lottype');
+
 
 /**
  * Fetches the list of campaigns, derived from lots.
- * In a real app, this should ideally be its own endpoint.
  */
 export const getCampagnes = async (): Promise<string[]> => {
     try {
         const lots = await getDropdownData('lot');
-        // Extract unique, non-null, non-empty campaign IDs
         const campagnes = [...new Set(lots.map(lot => lot.campagneID).filter(Boolean))];
         return campagnes;
     } catch (error) {

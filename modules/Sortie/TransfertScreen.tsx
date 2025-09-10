@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Button, Alert, TextInput, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Lot, Magasin } from './type';
-import { getMagasins } from './routes';
+import { getMagasins } from '../Shared/route';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
 
@@ -19,7 +19,8 @@ interface TransfertData {
 const TransfertScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { item } = route.params as { item: Lot };
+  const { item, onValider } = route.params as { item: Lot; onValider: (id: string) => void };
+
 
   const [operationType, setOperationType] = useState<'transfert' | 'export'>('transfert');
   const [transfertMode, setTransfertMode] = useState<'total' | 'partiel'>('total');
@@ -71,22 +72,37 @@ const TransfertScreen = () => {
         return;
     }
 
-    const data: TransfertData = {
-        operationType,
-        transfertMode,
-        destinationMagasinId: destinationMagasinId,
-        tracteur,
-        remorque,
-        nombreSacs,
-        nombrePalettes,
-    };
-
-    console.log(`Transfert action for lot: ${item.numeroLot} with data:`, data);
     Alert.alert(
-        "Succès",
-        `La sortie du lot ${item.numeroLot} a été enregistrée.`,
-        [{ text: "OK", onPress: () => navigation.goBack() }]
+        "Confirmer la sortie",
+        `Voulez-vous vraiment confirmer la sortie du lot ${item.numeroLot} de votre magasin ?`,
+        [
+            { text: "Annuler", style: "cancel" },
+            {
+                text: "Confirmer",
+                onPress: () => {
+                    // Étape 3: Exécuter la logique après confirmation
+                    const data: TransfertData = {
+                        operationType,
+                        transfertMode,
+                        destinationMagasinId: destinationMagasinId,
+                        tracteur,
+                        remorque,
+                        nombreSacs,
+                        nombrePalettes,
+                    };
+
+                    console.log(`Sortie confirmée pour le lot: ${item.numeroLot} avec les données:`, data);
+
+                    // Étape 4: Appeler la fonction de rappel pour mettre à jour la liste
+                    onValider(item.id);
+
+                    // Étape 5: Revenir à l'écran de la liste
+                    navigation.goBack();
+                }
+            }
+        ]
     );
+
   };
 
   const renderPicker = (label: string, selectedValue: any, onValueChange: (value: any) => void, items: any[], enabled: boolean = true) => (

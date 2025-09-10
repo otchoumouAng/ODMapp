@@ -4,7 +4,7 @@ import { Styles, Colors, Spacing, Typography } from '../../../styles/style';
 import Toast from 'react-native-toast-message';
 import { Envelope, Lock, Eye, EyeSlash } from 'phosphor-react-native';
 
-import Logo from '../../../assets/Logo.png';
+import Logo from '../../../assets/plant.png';
 
 interface LoginFormProps {
   onLogin: (username: string, password: string) => Promise<void>;
@@ -48,37 +48,18 @@ export default function LoginForm({ onLogin, isLoading }: LoginFormProps) {
       >
         <View style={{ alignItems: 'center', marginBottom: Spacing.xl }}>
           {/* Logo ou icône d'application */}
-          <View style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            backgroundColor: Colors.primary,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: Spacing.lg,
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-          }}>
-            {/*<Logo size={40} color={Colors.card} weight="fill" />*/}
-            <Image 
+          
+        <Image 
 			  source={Logo} 
 			  style={{ 
-			    width: 80, 
-			    height: 80, 
+			    width: 140, 
+			    height: 140, 
 			    marginBottom: Spacing.lg,
-			    borderRadius: 40,
 			  }} 
 			  resizeMode="contain"
 			/>
-          </View>
           
-          <Text style={[Typography.h1, { color: Colors.primary, marginBottom: Spacing.sm }]}>
+          <Text style={[Typography.h1, { color: '#9C1D37', marginBottom: Spacing.sm }]}>
             Bienvenue
           </Text>
          
@@ -179,11 +160,11 @@ export default function LoginForm({ onLogin, isLoading }: LoginFormProps) {
         {/* Information de copyright */}
         <Text style={{ 
           textAlign: 'center', 
-          color: Colors.secondary,
+          color: Colors.primary,
           fontSize: 12,
           marginTop: Spacing.xl
         }}>
-          © 2025 ODM TEC. Tous droits réservés.
+          © 2025 ODMTEC. Tous droits réservés.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

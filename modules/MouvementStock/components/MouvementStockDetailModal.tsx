@@ -34,28 +34,27 @@ const MouvementStockDetailModal: React.FC<MouvementStockDetailModalProps> = ({ v
         <View style={Styles.modalView}>
           <Text style={Styles.modalTitle}>Détails du Mouvement</Text>
           <ScrollView style={Styles.modalScrollView}>
-            <DetailRow label="ID" value={item.ID} />
-            <DetailRow label="Date" value={new Date(item.DateMouvement).toLocaleString()} />
+            <DetailRow label="Date" value={new Date(item.dateMouvement).toLocaleString()} />
             <DetailRow label="Magasin" value={item.MagasinNom} />
-            <DetailRow label="Campagne" value={item.CampagneID} />
-            <DetailRow label="Type Mouvement" value={item.MouvementTypeDesignation} />
-            <DetailRow label="Exportateur" value={item.ExportateurNom} />
-            <DetailRow label="Référence 1" value={item.Reference1} />
-            <DetailRow label="Référence 2" value={item.Reference2} />
-            <DetailRow label="Référence 3 (Immat.)" value={item.Reference3} />
-            <DetailRow label="Sens" value={item.Sens === 1 ? 'Entrée' : 'Sortie'} />
-            <DetailRow label="Quantité" value={item.Quantite} />
-            <DetailRow label="Poids Brut" value={item.PoidsBrut} />
-            <DetailRow label="Tare Sacs" value={item.TareSacs} />
-            <DetailRow label="Tare Palettes" value={item.TarePalettes} />
-            <DetailRow label="Poids Net Livré" value={item.PoidsNetLivre} />
-            <DetailRow label="Poids Net Accepté" value={item.PoidsNetAccepte} />
-            <DetailRow label="Statut" value={item.Statut} />
-            <DetailRow label="Certification" value={item.CertificationDesignation} />
-            <DetailRow label="Emplacement" value={item.EmplacementDesignation} />
-            <DetailRow label="Site" value={item.SiteNom} />
-            <DetailRow label="Commentaire" value={item.Commentaire} />
-            <DetailRow label="Créé par" value={`${item.CreationUtilisateur} le ${new Date(item.CreationDate).toLocaleDateString()}`} />
+            <DetailRow label="Campagne" value={item.campagneID} />
+            <DetailRow label="Type Mouvement" value={item.mouvementTypeDesignation} />
+            <DetailRow label="Exportateur" value={item.exportateurNom} />
+            <DetailRow label="Référence 1" value={item.reference1} />
+            <DetailRow label="Référence 2" value={item.reference2} />
+            <DetailRow label="Référence 3 (Immat.)" value={item.reference3} />
+            <DetailRow label="Sens" value={item.sens === 1 ? 'Entrée' : 'Sortie'} />
+            <DetailRow label="Quantité" value={item.quantite} />
+            <DetailRow label="Poids Brut" value={item.poidsBrut} />
+            <DetailRow label="Tare Sacs" value={item.tareSacs} />
+            <DetailRow label="Tare Palettes" value={item.tarePalettes} />
+            <DetailRow label="Poids Net Livré" value={item.poidsNetLivre} />
+            <DetailRow label="Poids Net Accepté" value={item.poidsNetAccepte} />
+            <DetailRow label="Statut" value={item.statut} />
+            <DetailRow label="Certification" value={item.certificationDesignation} />
+            <DetailRow label="Emplacement" value={item.emplacementDesignation} />
+            <DetailRow label="Site" value={item.siteNom} />
+            <DetailRow label="Commentaire" value={item.commentaire} />
+            <DetailRow label="Créé par" value={`${item.creationUtilisateur} le ${new Date(item.creationDate).toLocaleDateString()}`} />
           </ScrollView>
           <Button title="Fermer" onPress={onClose} color={Colors.primary} />
         </View>

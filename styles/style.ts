@@ -66,6 +66,12 @@ export const Styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+  buttonPrimaryLogin: {
+    backgroundColor: '#9c1d37',
+    padding: Spacing.md,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
   buttonSecondary: {
     backgroundColor: Colors.secondary,
     padding: Spacing.md,

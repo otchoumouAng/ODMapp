@@ -2,13 +2,8 @@ import axios from 'axios';
 import { Magasin } from './type';
 import { baseUrl } from '../../config';
 
-// Route definitions for the Sortie module.
-export const SORTIE_ROUTES = {
-  LIST: 'Sortie',
-  TRANSFERT: 'Transfert',
-};
 
-const API_URL = `${baseUrl}/magasin`;
+const API_URL = `${baseUrl}/sortie`;
 
 const handleNetworkError = (error: any) => {
   if (error.response) {
@@ -23,11 +18,4 @@ const handleNetworkError = (error: any) => {
   }
 };
 
-export const getMagasins = async (): Promise<Magasin[]> => {
-  try {
-    const response = await axios.get<Magasin[]>(API_URL);
-    return response.data;
-  } catch (error) {
-	throw handleNetworkError(error);
-  }
-};
+

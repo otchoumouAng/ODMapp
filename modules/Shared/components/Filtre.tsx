@@ -1,48 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, Button, ScrollView, TouchableOpacity, StyleSheet, Platform, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { FadersHorizontal, CaretUp, CaretDown, CalendarBlank } from 'phosphor-react-native';
 import * as apiService from '../../Shared/route';
-import { Magasin } from '../../Sortie/type';
 import { Styles, Colors } from '../../../styles/style';
 
-export interface MouvementStockFilters {
+export interface LotFilters {
   dateDebut?: string;
   dateFin?: string;
-  magasinID?: string;
   exportateurID?: string;
   campagneID?: string;
-  siteID?: string;
-  mouvementTypeID?: string;
+  typeLotID?: string; // certificationID remplacé par typeLotID
+  numeroLot?: string;
 }
 
-interface MouvementStockFilterProps {
-  onFilterChange: (filters: MouvementStockFilters) => void;
+interface LotFiltreProps {
+  onFilterChange: (filters: LotFilters) => void;
   onReset: () => void;
 }
 
-const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterChange, onReset }) => {
-  const [filters, setFilters] = useState<MouvementStockFilters>({});
+const Filtre: React.FC<LotFiltreProps> = ({ onFilterChange, onReset }) => {
+  const [filters, setFilters] = useState<LotFilters>({});
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
 
-  const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [exportateurs, setExportateurs] = useState<any[]>([]);
-  const [sites, setSites] = useState<any[]>([]);
-  const [types, setTypes] = useState<any[]>([]);
   const [campagnes, setCampagnes] = useState<string[]>([]);
+  const [lotTypes, setLotTypes] = useState<any[]>([]); // certifications remplacé par lotTypes
 
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        setMagasins(await apiService.getMagasins());
         setExportateurs(await apiService.getExportateurs());
-        setSites(await apiService.getSites());
-        setTypes(await apiService.getMouvementStockTypes());
         setCampagnes(await apiService.getCampagnes());
+        setLotTypes(await apiService.getLotTypes()); // Appel à la nouvelle fonction
         setDropdownsLoaded(true);
       } catch (error) {
         console.error("Failed to load filter data", error);
@@ -54,7 +48,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
     }
   }, [isExpanded, dropdownsLoaded]);
 
-  const handleValueChange = (name: keyof MouvementStockFilters, value: string | number) => {
+  const handleValueChange = (name: keyof LotFilters, value: string | number) => {
     setFilters(prev => ({ ...prev, [name]: String(value) }));
   };
 
@@ -70,7 +64,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios'); // Sur iOS, on peut vouloir le garder ouvert
+    setShowDatePicker(Platform.OS === 'ios');
     if (selectedDate && datePickerTarget) {
       const formattedDate = selectedDate.toISOString().split('T')[0];
       handleValueChange(datePickerTarget, formattedDate);
@@ -114,11 +108,19 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
 
       {isExpanded && (
         <ScrollView>
-          {renderPicker("Magasins", filters.magasinID, (val) => handleValueChange('magasinID', val), magasins, 'designation', 'id')}
+          <View style={Styles.filterPickerContainer}>
+            <Text style={Styles.filterPickerLabel}>Numéro de Lot</Text>
+            <TextInput
+              style={Styles.filterInput}
+              placeholder="Rechercher un numéro de lot..."
+              value={filters.numeroLot}
+              onChangeText={(val) => handleValueChange('numeroLot', val)}
+            />
+          </View>
+
           {renderPicker("Exportateurs", filters.exportateurID, (val) => handleValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
-          {renderPicker("Sites", filters.siteID, (val) => handleValueChange('siteID', val), sites, 'nom', 'id')}
-          {renderPicker("Types", filters.mouvementTypeID, (val) => handleValueChange('mouvementTypeID', val), types, 'designation', 'id')}
-          
+          {renderPicker("Types de Lot", filters.typeLotID, (val) => handleValueChange('typeLotID', val), lotTypes, 'designation', 'id')}
+
           <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Campagnes</Text>
               <Picker selectedValue={filters.campagneID} onValueChange={(val) => handleValueChange('campagneID', val)} style={Styles.filterPicker} mode="dropdown">
@@ -138,7 +140,6 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
                 </View>
             </TouchableOpacity>
           </View>
-
           <View style={Styles.filterPickerContainer}>
             <Text style={Styles.filterPickerLabel}>Date de fin</Text>
             <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateFin')}>
@@ -206,4 +207,4 @@ const localStyles = StyleSheet.create({
     }
 });
 
-export default MouvementStockFilter;
+export default Filtre;

@@ -6,19 +6,8 @@ import { Styles, Colors } from '../../../styles/style';
 
 interface MouvementStockCardProps {
   item: MouvementStock;
-  onDoubleClick: (item: MouvementStock) => void;
+  onPress: (item: MouvementStock) => void;
 }
-
-// Simple double-tap detection logic
-let lastTap: number | null = null;
-const handleDoubleClick = (item: MouvementStock, onDoubleClickCallback: (item: MouvementStock) => void) => {
-    const now = Date.now();
-    if (lastTap && (now - lastTap) < 300) {
-        onDoubleClickCallback(item);
-    } else {
-        lastTap = now;
-    }
-};
 
 const getStatusStyle = (status: string | null | undefined) => {
     switch (status) {
@@ -43,12 +32,12 @@ const getStatusStyle = (status: string | null | undefined) => {
     }
 };
 
-const MouvementStockCard: React.FC<MouvementStockCardProps> = ({ item, onDoubleClick }) => {
-    const statusStyle = getStatusStyle(item.Statut);
-    const isEntree = item.Sens === 1;
+const MouvementStockCard: React.FC<MouvementStockCardProps> = ({ item, onPress }) => {
+    const statusStyle = getStatusStyle(item.statut);
+    const isEntree = item.sens === 1;
 
     return (
-        <TouchableOpacity onPress={() => handleDoubleClick(item, onDoubleClick)}>
+        <TouchableOpacity onPress={() => onPress(item)}>
             <View style={[Styles.mouvementStockCard, { borderLeftColor: statusStyle.borderColor }]}>
                 <View style={Styles.mouvementStockCardIconContainer}>
                     {isEntree ? <ArrowDownLeft size={28} color={Colors.success} weight="bold" /> : <ArrowUpRight size={28} color={Colors.error} weight="bold" />}
@@ -56,14 +45,14 @@ const MouvementStockCard: React.FC<MouvementStockCardProps> = ({ item, onDoubleC
 
                 <View style={Styles.mouvementStockCardDetailsContainer}>
                     <View style={Styles.mouvementStockCardRow}>
-                        <Text style={Styles.mouvementStockCardTypeText} numberOfLines={1}>{item.MouvementTypeDesignation}</Text>
-                        <Text style={Styles.mouvementStockCardDateText}>{new Date(item.DateMouvement).toLocaleDateString()}</Text>
+                        <Text style={Styles.mouvementStockCardTypeText} numberOfLines={1}>{item.mouvementTypeDesignation}</Text>
+                        <Text style={Styles.mouvementStockCardDateText}>{new Date(item.dateMouvement).toLocaleDateString()}</Text>
                     </View>
                     <View style={Styles.mouvementStockCardRow}>
-                        <Text style={Styles.mouvementStockCardPoidsText}>{item.PoidsNetAccepte.toFixed(2)} kg</Text>
+                        <Text style={Styles.mouvementStockCardPoidsText}>{(item.poidsNetAccepte ?? 0).toFixed(2)} kg</Text>
                         <Text style={[Styles.mouvementStockCardStatusText, { color: statusStyle.statusColor }]}>{statusStyle.statusText}</Text>
                     </View>
-                     <Text style={Styles.mouvementStockCardMagasinText}>{item.MagasinNom} | {item.ExportateurNom}</Text>
+                     <Text style={Styles.mouvementStockCardMagasinText}>{item.magasinNom} | {item.exportateurNom}</Text>
                 </View>
             </View>
         </TouchableOpacity>

@@ -7,10 +7,10 @@ import { Styles, Colors, Spacing, Typography } from '../../styles/style';
 
 
 const modules = [
+  { id: "stock", title: "Stock", icon: Package, screen: "Stock" },
   { id: "sortie", title: "Sortie", icon: Truck, screen: "Sortie" },
   { id: "entre", title: "Entrée", icon: TrayArrowDown, screen: "Entre" },
-  { id: "mouvementStock", title: "Mouvement du Stock", icon: ArrowsLeftRight, screen: "MouvementStock" },
-  { id: "stock", title: "Stock", icon: Package, screen: "Stock" },
+  { id: "mouvementStock", title: "Mouvement", icon: ArrowsLeftRight, screen: "MouvementStock" },
 ];
 
 export default function HomeScreen() {

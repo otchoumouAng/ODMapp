@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Package } from 'phosphor-react-native';
-import { Lot } from '../types/lot';
+// Assurez-vous que le chemin vers le type Lot est correct
+import { Lot } from '../types/lot'; 
 
 interface LotCardProps {
   item: Lot;
@@ -9,9 +10,11 @@ interface LotCardProps {
 }
 
 const getStatusStyle = (status: string) => {
-    // This can be expanded with more statuses later
     if (status === 'NA') {
         return { borderColor: '#007bff', statusText: 'Nouveau' };
+    }
+     if (status === 'REC') {
+        return { borderColor: '#28a745', statusText: 'Reçu' };
     }
     return { borderColor: '#6c757d', statusText: status };
 };
@@ -32,7 +35,8 @@ const LotCard: React.FC<LotCardProps> = ({ item, onPress }) => {
                         <Text style={styles.dateText}>{new Date(item.dateLot).toLocaleDateString()}</Text>
                     </View>
                     <View style={styles.row}>
-                        <Text style={styles.poidsText}>{item.poidsNet.toFixed(2)} kg</Text>
+                        {/* LIGNE CORRIGÉE */}
+                        <Text style={styles.poidsText}>{(item.poidsNet ?? 0).toFixed(2)} kg</Text>
                         <Text style={styles.statusText}>{statusStyle.statusText}</Text>
                     </View>
                      <Text style={styles.subText} numberOfLines={1}>{item.exportateurNom} | {item.campagneID}</Text>
@@ -93,7 +97,7 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         paddingHorizontal: 6,
         borderRadius: 4,
-        overflow: 'hidden', // to ensure borderRadius works on Text
+        overflow: 'hidden',
     },
     subText: {
         fontSize: 12,

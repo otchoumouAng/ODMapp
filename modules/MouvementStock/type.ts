@@ -1,43 +1,43 @@
 export interface MouvementStock {
-  ID: string; // GUID is a string in TS/JSON
-  MagasinID: number;
-  MagasinNom: string;
-  CampagneID: string;
-  ExportateurID?: number | null;
-  ExportateurNom?: string | null;
-  MouvementTypeID: number;
-  MouvementTypeDesignation: string;
-  CertificationID?: number | null;
-  CertificationDesignation?: string | null;
-  SacTypeID?: number | null;
-  SacTypeDesignation?: string | null;
-  ObjetEnStockID?: string | null; // GUID
-  ObjetEnStockType?: number | null;
-  EmplacementID?: number | null;
-  EmplacementDesignation?: string | null;
-  SiteID: number;
-  SiteNom: string;
-  Reference1?: string | null;
-  Reference2?: string | null;
-  Reference3?: string | null;
-  DateMouvement: string; // DateTime is a string in JSON
-  Sens: number; // short is a number
-  Quantite: number;
-  PoidsBrut: number; // decimal is a number
-  TareSacs: number;
-  TarePalettes: number;
-  PoidsNetLivre: number;
-  RetentionPoids: number;
-  PoidsNetAccepte: number;
-  Statut?: string | null;
-  Commentaire?: string | null;
-  Desactive?: boolean | null;
-  ApprobationUtilisateur?: string | null;
-  ApprobationDate?: string | null; // DateTime
-  CreationUtilisateur: string;
-  CreationDate: string; // DateTime
-  ModificationUtilisateur?: string | null;
-  ModificationDate?: string | null; // DateTime
-  RowVersionKey?: any | null; // byte[] can be complex, using 'any' for now
-  ProduitID?: number | null;
+  id: string; // minuscule
+  magasinID: number;
+  magasinNom: string;
+  campagneID: string;
+  exportateurID?: number | null;
+  exportateurNom?: string | null;
+  mouvementTypeID: number;
+  mouvementTypeDesignation: string;
+  certificationID?: number | null;
+  certificationDesignation?: string | null;
+  sacTypeID?: number | null;
+  sacTypeDesignation?: string | null;
+  objetEnStockID?: string | null;
+  objetEnStockType?: number | null;
+  emplacementID?: number | null;
+  emplacementDesignation?: string | null;
+  siteID: number;
+  siteNom: string;
+  reference1?: string | null;
+  reference2?: string | null;
+  reference3?: string | null;
+  dateMouvement: string;
+  sens: number;
+  quantite: number;
+  poidsBrut: number;
+  tareSacs: number;
+  tarePalettes: number;
+  poidsNetLivre: number;
+  retentionPoids: number;
+  poidsNetAccepte: number;
+  statut?: string | null;
+  commentaire?: string | null;
+  desactive?: boolean | null;
+  approbationUtilisateur?: string | null;
+  approbationDate?: string | null;
+  creationUtilisateur: string;
+  creationDate: string;
+  modificationUtilisateur?: string | null;
+  modificationDate?: string | null;
+  rowVersionKey?: any | null;
+  produitID?: number | null;
 }

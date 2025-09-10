@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 
 import MouvementStockFilter, { MouvementStockFilters } from './components/MouvementStockFilter';
 import MouvementStockTable from './components/MouvementStockTable';
 import MouvementStockDetailModal from './components/MouvementStockDetailModal';
 import { MouvementStock } from './type';
-import * as apiService from '../../services/api';
+import * as apiService from '../Shared/route';
 import { Styles, Colors } from '../../styles/style';
 
 const MouvementStockScreen = () => {
@@ -18,20 +18,17 @@ const MouvementStockScreen = () => {
   const fetchMouvements = useCallback(async () => {
     setLoading(true);
     try {
-      // Build query string from filters
       const queryParams = new URLSearchParams();
       if (filters.dateDebut) queryParams.append('datedebut', filters.dateDebut);
       if (filters.dateFin) queryParams.append('datefin', filters.dateFin);
       if (filters.magasinID) queryParams.append('magasinID', filters.magasinID);
       if (filters.exportateurID) queryParams.append('exportateurID', filters.exportateurID);
-      if (filters.campagneID) queryParams.append('campagneID', filters.campagneID);
+      if (filters.campagneID) queryPams.append('campagneID', filters.campagneID);
 
-      // The new service function expects the params object directly
       const data = await apiService.getMouvements(queryParams);
       setMouvements(data);
     } catch (error) {
       console.error("Failed to fetch stock movements:", error);
-      // Here you might want to show an error message to the user
     } finally {
       setLoading(false);
     }
@@ -49,7 +46,7 @@ const MouvementStockScreen = () => {
     setFilters({});
   }
 
-  const handleRowDoubleClick = (item: MouvementStock) => {
+  const handleRowPress = (item: MouvementStock) => {
     setSelectedItem(item);
     setIsModalVisible(true);
   };
@@ -60,13 +57,13 @@ const MouvementStockScreen = () => {
   };
 
   return (
-    <View style={Styles.container}>
+    <View style={[Styles.container, { marginTop: 40 }]}>
       <MouvementStockFilter onFilterChange={handleFilterChange} onReset={handleResetFilters} />
 
       {loading ? (
         <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />
       ) : (
-        <MouvementStockTable data={mouvements} onRowDoubleClick={handleRowDoubleClick} />
+        <MouvementStockTable data={mouvements} onRowPress={handleRowPress} />
       )}
 
       <MouvementStockDetailModal

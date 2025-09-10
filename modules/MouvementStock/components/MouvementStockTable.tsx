@@ -6,13 +6,13 @@ import { Styles, Colors } from '../../../styles/style';
 
 interface MouvementStockTableProps {
   data: MouvementStock[];
-  onRowDoubleClick: (item: MouvementStock) => void;
+  onRowPress: (item: MouvementStock) => void;
 }
 
-const MouvementStockTable: React.FC<MouvementStockTableProps> = ({ data, onRowDoubleClick }) => {
+const MouvementStockTable: React.FC<MouvementStockTableProps> = ({ data, onRowPress }) => {
 
   const renderItem = ({ item }: { item: MouvementStock }) => (
-    <MouvementStockCard item={item} onDoubleClick={onRowDoubleClick} />
+    <MouvementStockCard item={item} onPress={onRowPress} />
   );
 
   return (
@@ -20,7 +20,7 @@ const MouvementStockTable: React.FC<MouvementStockTableProps> = ({ data, onRowDo
         <FlatList
             data={data}
             renderItem={renderItem}
-            keyExtractor={(item) => item.ID}
+            keyExtractor={(item) => item.id}
             contentContainerStyle={Styles.list}
             ListEmptyComponent={<Text style={Styles.emptyText}>Aucun mouvement à afficher.</Text>}
         />
