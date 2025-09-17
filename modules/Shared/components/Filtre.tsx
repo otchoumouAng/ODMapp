@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, TouchableOpacity, StyleSheet, Platform, TextInput } from 'react-native';
+import { View, Text, Button, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { FadersHorizontal, CaretUp, CaretDown, CalendarBlank } from 'phosphor-react-native';
@@ -7,46 +7,72 @@ import * as apiService from '../../Shared/route';
 import { Styles, Colors } from '../../../styles/style';
 
 export interface LotFilters {
+  campagneID?: string;
+  exportateurID?: string;
+  produitID?: string;
+  typeLotID?: string;
+  certificationID?: string;
+  gradeID?: string;
+  siteID?: string;
+  // Champs pour les deux modes de date
   dateDebut?: string;
   dateFin?: string;
-  exportateurID?: string;
-  campagneID?: string;
-  typeLotID?: string; // certificationID remplacé par typeLotID
-  numeroLot?: string;
+  endDate?: string; // Pour le mode date unique
 }
 
-interface LotFiltreProps {
+interface FiltreProps {
   onFilterChange: (filters: LotFilters) => void;
   onReset: () => void;
+  showDateFilters?: boolean;
+  showSiteFilter?: boolean;
+  // ## NOUVELLE PROP ## : Contrôle le mode d'affichage des dates
+  dateMode?: 'range' | 'single'; 
 }
 
-const Filtre: React.FC<LotFiltreProps> = ({ onFilterChange, onReset }) => {
+const Filtre: React.FC<FiltreProps> = ({ 
+  onFilterChange, 
+  onReset, 
+  showDateFilters = true,
+  showSiteFilter = true,
+  // Valeur par défaut à 'range' pour la rétrocompatibilité
+  dateMode = 'range'
+}) => {
   const [filters, setFilters] = useState<LotFilters>({});
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
-  const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
+  // Le type est étendu pour inclure 'endDate'
+  const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | 'endDate' | null>(null);
 
-  const [exportateurs, setExportateurs] = useState<any[]>([]);
   const [campagnes, setCampagnes] = useState<string[]>([]);
-  const [lotTypes, setLotTypes] = useState<any[]>([]); // certifications remplacé par lotTypes
+  const [exportateurs, setExportateurs] = useState<any[]>([]);
+  const [produits, setProduits] = useState<any[]>([]);
+  const [lotTypes, setLotTypes] = useState<any[]>([]);
+  const [certifications, setCertifications] = useState<any[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
 
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        setExportateurs(await apiService.getExportateurs());
         setCampagnes(await apiService.getCampagnes());
-        setLotTypes(await apiService.getLotTypes()); // Appel à la nouvelle fonction
+        setExportateurs(await apiService.getExportateurs());
+        setProduits(await apiService.getProduits()); 
+        setLotTypes(await apiService.getLotTypes());
+        setCertifications(await apiService.getCertifications());
+        setGrades(await apiService.getGrades()); 
+        if (showSiteFilter) {
+            setSites(await apiService.getSites());
+        }
         setDropdownsLoaded(true);
       } catch (error) {
         console.error("Failed to load filter data", error);
       }
     };
-
     if (isExpanded && !dropdownsLoaded) {
         loadDropdownData();
     }
-  }, [isExpanded, dropdownsLoaded]);
+  }, [isExpanded, dropdownsLoaded, showSiteFilter]);
 
   const handleValueChange = (name: keyof LotFilters, value: string | number) => {
     setFilters(prev => ({ ...prev, [name]: String(value) }));
@@ -71,7 +97,7 @@ const Filtre: React.FC<LotFiltreProps> = ({ onFilterChange, onReset }) => {
     }
   };
 
-  const showPickerFor = (target: 'dateDebut' | 'dateFin') => {
+  const showPickerFor = (target: 'dateDebut' | 'dateFin' | 'endDate') => {
     setDatePickerTarget(target);
     setShowDatePicker(true);
   };
@@ -109,48 +135,60 @@ const Filtre: React.FC<LotFiltreProps> = ({ onFilterChange, onReset }) => {
       {isExpanded && (
         <ScrollView>
           <View style={Styles.filterPickerContainer}>
-            <Text style={Styles.filterPickerLabel}>Numéro de Lot</Text>
-            <TextInput
-              style={Styles.filterInput}
-              placeholder="Rechercher un numéro de lot..."
-              value={filters.numeroLot}
-              onChangeText={(val) => handleValueChange('numeroLot', val)}
-            />
-          </View>
-
-          {renderPicker("Exportateurs", filters.exportateurID, (val) => handleValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
-          {renderPicker("Types de Lot", filters.typeLotID, (val) => handleValueChange('typeLotID', val), lotTypes, 'designation', 'id')}
-
-          <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Campagnes</Text>
               <Picker selectedValue={filters.campagneID} onValueChange={(val) => handleValueChange('campagneID', val)} style={Styles.filterPicker} mode="dropdown">
                   <Picker.Item label="-- Toutes les campagnes --" value="" />
                   {campagnes.map(c => <Picker.Item key={c} label={c} value={c} />)}
               </Picker>
           </View>
+
+          {renderPicker("Exportateurs", filters.exportateurID, (val) => handleValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
+          {renderPicker("Produits", filters.produitID, (val) => handleValueChange('produitID', val), produits, 'designation', 'id')}
+          {renderPicker("Types de Lot", filters.typeLotID, (val) => handleValueChange('typeLotID', val), lotTypes, 'designation', 'id')}
+          {renderPicker("Certifications", filters.certificationID, (val) => handleValueChange('certificationID', val), certifications, 'designation', 'id')}
+          {renderPicker("Grades", filters.gradeID, (val) => handleValueChange('gradeID', val), grades, 'designation', 'id')}
           
-          <View style={Styles.filterPickerContainer}>
-            <Text style={Styles.filterPickerLabel}>Date de début</Text>
-            <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateDebut')}>
-                <View style={localStyles.dateButtonContent}>
-                  <CalendarBlank size={20} color={Colors.darkGray} />
-                  <Text style={localStyles.dateText}>
-                      {filters.dateDebut || "Sélectionner une date"}
-                  </Text>
-                </View>
-            </TouchableOpacity>
-          </View>
-          <View style={Styles.filterPickerContainer}>
-            <Text style={Styles.filterPickerLabel}>Date de fin</Text>
-            <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateFin')}>
-                <View style={localStyles.dateButtonContent}>
-                  <CalendarBlank size={20} color={Colors.darkGray} />
-                  <Text style={localStyles.dateText}>
-                      {filters.dateFin || "Sélectionner une date"}
-                  </Text>
-                </View>
-            </TouchableOpacity>
-          </View>
+          {showSiteFilter && renderPicker("Sites", filters.siteID, (val) => handleValueChange('siteID', val), sites, 'nom', 'id')}
+
+          {/* ## MODIFICATION ## : Affichage conditionnel des dates */}
+          {showDateFilters && dateMode === 'range' && (
+            <>
+              <View style={Styles.filterPickerContainer}>
+                <Text style={Styles.filterPickerLabel}>Date de début</Text>
+                <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateDebut')}>
+                    <View style={localStyles.dateButtonContent}>
+                      <CalendarBlank size={20} color={Colors.darkGray} />
+                      <Text style={localStyles.dateText}>
+                          {filters.dateDebut || "Sélectionner une date"}
+                      </Text>
+                    </View>
+                </TouchableOpacity>
+              </View>
+              <View style={Styles.filterPickerContainer}>
+                <Text style={Styles.filterPickerLabel}>Date de fin</Text>
+                <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateFin')}>
+                    <View style={localStyles.dateButtonContent}>
+                      <CalendarBlank size={20} color={Colors.darkGray} />
+                      <Text style={localStyles.dateText}>
+                          {filters.dateFin || "Sélectionner une date"}
+                      </Text>
+                    </View>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+          {showDateFilters && dateMode === 'single' && (
+             <View style={Styles.filterPickerContainer}>
+              <Text style={Styles.filterPickerLabel}>Date d'arrêté</Text>
+              <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('endDate')}>
+                  <View style={localStyles.dateButtonContent}>
+                    <CalendarBlank size={20} color={Colors.darkGray} />
+                    <Text style={localStyles.dateText}>{filters.endDate || "Sélectionner une date"}</Text>
+                  </View>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <View style={Styles.filterButtonContainer}>
             <Button title="Réinitialiser" onPress={handleResetFilters} color={Colors.danger} />

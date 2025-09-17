@@ -1,185 +1,227 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Button, Alert, TextInput, ScrollView } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, Text, Button, Alert, TextInput, ScrollView, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { Lot, Magasin } from './type';
+import Toast from 'react-native-toast-message';
+import { Magasin } from './type';
 import { getMagasins } from '../Shared/route';
+import { createTransfert } from './routes';
+import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { StockLot } from '../Stock/type';
 
-interface TransfertData {
-    operationType: 'transfert' | 'export';
-    transfertMode: 'total' | 'partiel';
-    destinationMagasinId?: string;
-    tracteur?: string;
-    remorque?: string;
-    nombrePalettes?: number;
-    nombreSacs?: number;
-}
+const InfoRow = ({ label, value }: { label: string, value: any }) => (
+    <View style={localStyles.infoRow}>
+        <Text style={localStyles.infoLabel}>{label}</Text>
+        <Text style={localStyles.infoValue}>{value ?? 'N/A'}</Text>
+    </View>
+);
 
 const TransfertScreen = () => {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { item, onValider } = route.params as { item: Lot; onValider: (id: string) => void };
+    const route = useRoute();
+    const navigation = useNavigation();
+    const { user } = useContext(AuthContext);
+    const { item } = route.params as { item: StockLot & { lotID: string } };
 
+    const [operationType, setOperationType] = useState<'transfert' | 'export'>('transfert');
+    const [transfertMode, setTransfertMode] = useState<'total' | 'partiel'>('total');
+    const [destinationMagasinId, setDestinationMagasinId] = useState<string>('');
+    const [tracteur, setTracteur] = useState('');
+    const [remorque, setRemorque] = useState('');
+    const [nombreSacs, setNombreSacs] = useState<number | undefined>(item.quantite);
+    const [magasins, setMagasins] = useState<Magasin[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const [operationType, setOperationType] = useState<'transfert' | 'export'>('transfert');
-  const [transfertMode, setTransfertMode] = useState<'total' | 'partiel'>('total');
-  const [destinationMagasinId, setDestinationMagasinId] = useState<string>('');
-  const [tracteur, setTracteur] = useState('');
-  const [remorque, setRemorque] = useState('');
-  const [nombrePalettes, setNombrePalettes] = useState<number | undefined>(undefined);
-  const [nombreSacs, setNombreSacs] = useState<number | undefined>(undefined);
-  const [magasins, setMagasins] = useState<Magasin[]>([]);
+    // #################### AJOUT DES CHAMPS REQUIS ####################
+    const [numBordereau, setNumBordereau] = useState('');
+    const [commentaire, setCommentaire] = useState('');
+    // ##################################################################
 
-  useEffect(() => {
-    const loadMagasins = async () => {
-      try {
-        const data = await getMagasins();
-        setMagasins(data);
-      } catch (error) {
-        console.error("Failed to load magasins", error);
-        Alert.alert("Erreur", "Impossible de charger la liste des magasins.");
-      }
-    };
-    loadMagasins();
-  }, []);
-
-
-  useEffect(() => {
-    if (operationType === 'export') {
-      setDestinationMagasinId('N/A');
-    } else {
-      setDestinationMagasinId('');
-    }
-  }, [operationType]);
-
-
-  useEffect(() => {
-    if (transfertMode === 'total' && item) {
-      setNombreSacs(item.nombreSacs);
-      // Assuming you might add nombrePalettes to the Lot type later
-      // setNombrePalettes(item.nombrePalettes);
-    } else {
-      setNombreSacs(undefined);
-      setNombrePalettes(undefined);
-    }
-  }, [transfertMode, item]);
-
-
-  const handleTransfert = () => {
-    if (operationType === 'transfert' && !destinationMagasinId) {
-        Alert.alert("Erreur", "Veuillez sélectionner un magasin de destination.");
-        return;
-    }
-
-    Alert.alert(
-        "Confirmer la sortie",
-        `Voulez-vous vraiment confirmer la sortie du lot ${item.numeroLot} de votre magasin ?`,
-        [
-            { text: "Annuler", style: "cancel" },
-            {
-                text: "Confirmer",
-                onPress: () => {
-                    // Étape 3: Exécuter la logique après confirmation
-                    const data: TransfertData = {
-                        operationType,
-                        transfertMode,
-                        destinationMagasinId: destinationMagasinId,
-                        tracteur,
-                        remorque,
-                        nombreSacs,
-                        nombrePalettes,
-                    };
-
-                    console.log(`Sortie confirmée pour le lot: ${item.numeroLot} avec les données:`, data);
-
-                    // Étape 4: Appeler la fonction de rappel pour mettre à jour la liste
-                    onValider(item.id);
-
-                    // Étape 5: Revenir à l'écran de la liste
-                    navigation.goBack();
-                }
+    useEffect(() => {
+        const loadMagasins = async () => {
+            try {
+                const data = await getMagasins();
+                const filteredMagasins = data.filter(m => m.id !== user?.magasinID);
+                setMagasins(filteredMagasins);
+            } catch (error) {
+                console.error("Failed to load magasins", error);
+                Alert.alert("Erreur", "Impossible de charger la liste des magasins.");
             }
-        ]
+        };
+        loadMagasins();
+    }, [user]);
+
+    const handleTransfert = async () => {
+        // Validation côté client
+        if (operationType === 'transfert' && !destinationMagasinId) {
+            Alert.alert("Validation", "Veuillez sélectionner un magasin de destination.");
+            return;
+        }
+        if (!numBordereau.trim()) {
+            Alert.alert("Validation", "Le numéro du bordereau est obligatoire.");
+            return;
+        }
+         if (!commentaire.trim()) {
+            Alert.alert("Validation", "Un commentaire est obligatoire pour la sortie.");
+            return;
+        }
+        if (!user || !user.magasinID || !user.locationID || !user.name) {
+            Alert.alert("Erreur", "Utilisateur non authentifié.");
+            return;
+        }
+        if (!item.lotID) {
+            Alert.alert("Erreur Critique", "L'identifiant du lot (GUID) est manquant.");
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        const transfertData = {
+            LotID: item.lotID,
+            NumeroLot: item.reference,
+            CampagneID: item.campagneID || "2023/2024",
+            SiteID: user.locationID,
+            MagasinExpeditionID: user.magasinID,
+            MagReceptionTheoID: operationType === 'transfert' ? parseInt(destinationMagasinId, 10) : undefined,
+            NombreSacsExpedition: nombreSacs ?? 0,
+            PoidsBrutExpedition: item.poidsBrut,
+            PoidsNetExpedition: item.poidsNetAccepte,
+            TareSacsExpedition: (item.poidsBrut ?? 0) - (item.poidsNetAccepte ?? 0),
+            TarePaletteExpedition: 0,
+            ImmTracteurExpedition: tracteur,
+            ImmRemorqueExpedition: remorque,
+            DateExpedition: new Date().toISOString(),
+            CreationUtilisateur: user.name,
+
+            // #################### AJOUT DES CHAMPS DANS L'ENVOI ####################
+            Statut: "PE", // "PE" pour "En Préparation" ou "AP" pour "Approuvé", à adapter
+            CommentaireExpedition: commentaire,
+            NumBordereauExpedition: numBordereau,
+            ModeTransfertID: transfertMode === 'total' ? 1 : 2,
+            TypeOperationID: operationType === 'transfert' ? 1 : 2,
+            // #######################################################################
+        };
+
+        try {
+            await createTransfert(transfertData);
+            Toast.show({ type: 'success', text1: 'Opération réussie', text2: `La sortie du lot ${item.reference} a été validée.` });
+            navigation.goBack();
+        } catch (error: any) {
+            // Affiche une erreur plus claire pour l'utilisateur
+            const errorMessage = error.response?.data?.message || error.message || "Une erreur est survenue.";
+            Alert.alert("Échec de l'opération", errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <ScrollView style={Styles.container}>
+            <View style={localStyles.pageContainer}>
+                <Text style={Styles.modalTitle}>SORTIE DU LOT</Text>
+                <Text style={localStyles.lotNumberHeader}>{item.reference}</Text>
+
+                <View style={localStyles.sectionContainer}>
+                    <Text style={localStyles.sectionTitle}>Détails du Lot</Text>
+                    <InfoRow label="Produit" value={item.libelleProduit} />
+                    <InfoRow label="Certification" value={item.nomCertification} />
+                    <InfoRow label="Poids Net" value={`${item.poidsNetAccepte?.toFixed(2)} kg`} />
+                    <InfoRow label="Nombre de Sacs" value={item.quantite} />
+                </View>
+
+                <View style={localStyles.sectionContainer}>
+                    <Text style={localStyles.sectionTitle}>Détails de l'Opération</Text>
+                    
+                    {/* ############### AJOUT DES CHAMPS DANS L'INTERFACE ############### */}
+                    <TextInput style={Styles.filterInput} placeholder="Numéro du Bordereau *" value={numBordereau} onChangeText={setNumBordereau} />
+                    <TextInput style={Styles.filterInput} placeholder="Commentaire *" value={commentaire} onChangeText={setCommentaire} multiline />
+                    {/* ################################################################### */}
+                    
+                    <Picker selectedValue={operationType} onValueChange={itemValue => setOperationType(itemValue)}>
+                        <Picker.Item label='Transfert inter-magasin' value='transfert' />
+                        <Picker.Item label='Sortie pour export' value='export' />
+                    </Picker>
+                    <Picker selectedValue={transfertMode} onValueChange={itemValue => setTransfertMode(itemValue)}>
+                        <Picker.Item label='Total' value='total' />
+                        <Picker.Item label='Partiel' value='partiel' />
+                    </Picker>
+                    <Picker selectedValue={destinationMagasinId} onValueChange={itemValue => setDestinationMagasinId(itemValue)} enabled={operationType === 'transfert'}>
+                        <Picker.Item label={operationType === 'export' ? "N/A" : "-- Sélectionnez un magasin --"} value="" />
+                        {magasins.map(magasin => (
+                            <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
+                        ))}
+                    </Picker>
+                    <TextInput style={Styles.filterInput} placeholder="Tracteur" value={tracteur} onChangeText={setTracteur} />
+                    <TextInput style={Styles.filterInput} placeholder="Remorque" value={remorque} onChangeText={setRemorque} />
+                    <TextInput
+                        style={[Styles.filterInput, transfertMode === 'total' && localStyles.disabledInput]}
+                        placeholder="Nombre de sacs"
+                        value={nombreSacs?.toString()}
+                        onChangeText={(text) => setNombreSacs(Number(text))}
+                        editable={transfertMode === 'partiel'}
+                        keyboardType="numeric"
+                    />
+                </View>
+
+                <View style={Styles.modalButtonContainer}>
+                    <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} disabled={isSubmitting} />
+                    <Button title="Valider Sortie" onPress={handleTransfert} color={Colors.primary} disabled={isSubmitting} />
+                </View>
+            </View>
+        </ScrollView>
     );
-
-  };
-
-  const renderPicker = (label: string, selectedValue: any, onValueChange: (value: any) => void, items: any[], enabled: boolean = true) => (
-    <View style={[Styles.filterPickerContainer, { marginTop: 20, marginBottom: 20 }]}>
-        <Text style={Styles.filterPickerLabel}>{label}</Text>
-        <Picker
-            selectedValue={selectedValue}
-            onValueChange={onValueChange}
-            style={Styles.filterPicker}
-            enabled={enabled}
-        >
-            {items.map(i => (
-                <Picker.Item key={i.value} label={i.label} value={i.value} />
-            ))}
-        </Picker>
-    </View>
-  );
-
-  return (
-    <ScrollView style={Styles.container}>
-      <View style={{ padding: 20, marginTop:36 }}>
-          <Text style={Styles.modalTitle}>Transférer le Lot</Text>
-
-          <Text style={Styles.lotInfo}>Lot: <Text style={Styles.lotInfoBold}>{item.numeroLot}</Text></Text>
-
-          {renderPicker("Type d’opération", operationType, setOperationType, [
-              { label: 'Transfert inter-magasin', value: 'transfert' },
-              { label: 'Sortie pour export', value: 'export' },
-          ])}
-
-          {renderPicker("Mode de transfert", transfertMode, setTransfertMode, [
-              { label: 'Total', value: 'total' },
-              { label: 'Partiel', value: 'partiel' },
-          ])}
-
-          <View style={[Styles.filterPickerContainer, { marginTop: 20, marginBottom: 20 }]}>
-              <Text style={Styles.filterPickerLabel}>Magasin de Destination</Text>
-              <Picker
-                  selectedValue={destinationMagasinId}
-                  onValueChange={(itemValue) => setDestinationMagasinId(itemValue)}
-                  style={Styles.filterPicker}
-                  enabled={operationType === 'transfert'}
-              >
-                  <Picker.Item label={operationType === 'export' ? "N/A" : "-- Sélectionnez un magasin --"} value="" />
-                  {magasins.map(magasin => (
-                      <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
-                  ))}
-              </Picker>
-          </View>
-
-          <TextInput style={Styles.filterInput} placeholder="Tracteur" value={tracteur} onChangeText={setTracteur} />
-          <TextInput style={Styles.filterInput} placeholder="Remorque" value={remorque} onChangeText={setRemorque} />
-
-          <TextInput
-            style={[Styles.filterInput, transfertMode === 'total' && { backgroundColor: '#e9ecef' }]}
-            placeholder="Nombre de sacs"
-            value={nombreSacs?.toString()}
-            onChangeText={(text) => setNombreSacs(Number(text))}
-            editable={transfertMode === 'partiel'}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={[Styles.filterInput, transfertMode === 'total' && { backgroundColor: '#e9ecef' }]}
-            placeholder="Nombre de palettes"
-            value={nombrePalettes?.toString()}
-            onChangeText={(text) => setNombrePalettes(Number(text))}
-            editable={transfertMode === 'partiel'}
-            keyboardType="numeric"
-          />
-
-          <View style={Styles.modalButtonContainer}>
-            <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} />
-            <Button title="Transférer" onPress={handleTransfert} color={Colors.primary} />
-          </View>
-        </View>
-    </ScrollView>
-  );
 };
+
+// ... (les styles restent identiques)
+const localStyles = StyleSheet.create({
+    pageContainer: {
+        padding: 20,
+        paddingTop: 40
+    },
+    sectionContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 20,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.primary,
+        marginBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.lightGray,
+        paddingBottom: 8,
+    },
+    lotNumberHeader: {
+        textAlign: 'center',
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: Colors.dark,
+        marginBottom: 20,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 6,
+    },
+    infoLabel: {
+        fontSize: 16,
+        color: Colors.darkGray,
+    },
+    infoValue: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: Colors.dark,
+    },
+    disabledInput: {
+        backgroundColor: '#e9ecef'
+    }
+});
 
 export default TransfertScreen;
