@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Package } from 'phosphor-react-native';
 import { Lot } from '../types/lot'; // Adaptez le chemin si nécessaire
-import { Colors } from '../../styles/style'; // Adaptez le chemin si nécessaire
+import { Colors } from '../../../styles/style'; // Adaptez le chemin si nécessaire
 
 interface LotGridItemProps {
   item: Lot;

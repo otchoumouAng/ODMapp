@@ -1,0 +1,40 @@
+# PAIEMENT WORKFLOW
+
+Hello Jules,
+
+Nous souhaitons reduire le workflow de paiement afin de fournir une experience meilleur
+
+CE QUI CE FAIS ACTUELLEMENT, SUR LA PAGE DE NOUVELLE DEMANDE:
+ - L'utilisateur crée ses demandes
+ - Il peut soumettre ses demande pour validation
+ - Une fois qu'une demande est validé (statut Accepté):
+    * Il peut voir le bouton "Payer les frais" dans le panel des détails
+    * En cliquant sur le bouton "Payer les frais", il est automatiquement rediriger sur la page de paiement avec l'id de la demande
+    * Cette page affiche une liste déroulante lui permettant de choisir le type de demandeur (personne morale ou physique)
+    	-> En selectionnant le type de demandeur, le systeme recupère les variables suivantes: type_demandeur_id, type_demande_id, type_paiement_id
+    	-> Le système effectue une requête avec ses trois variables afin de recupérer le service approprier
+    	-> L'utilisateur à alors un resumé (Etape 2)
+    	-> L'utilisateur peut alors confirmer les information et proceder au paiement de se service
+
+
+CE QUE NOUS VOULONS MAINTENANT:
+
+Lorsque l'utilisateur clique sur le bouton "Payer les frais"
+ - Nous affichons un loader
+ - Nous recuperons les variables type_demande_id, type_paiement_id en fonction de la demande choisie
+ - Nous recuperons la variable type_demandeur_id en fonction des critères suivants:
+ 	-> En fonction de l'utilisateur connecté:
+ 		* On vérifie si l'utilisateur a un type d'opérateur ?
+ 			-- Si ok:
+ 				- alors l'utilisateur est une entreprise
+ 				- la table metier.pay_ref_types_demandeur(entité TypeDemandeur) à deux valeurs: Personnes morales ou Personnes physiques
+ 				- On recupere l'id correspond et on l'assigne à la vairiable type_demandeur_id
+ 			-- Si non:
+ 				- alors l'utilisateur est une personne physique
+ 				- on recupère l'id qui correspond, puis on l'assigne à la variable type_demandeur_id
+
+ - Nous avons maintenant les trois variables qui nous permettent de recupérer le service approprié
+ - l'utilisateur est maintenant rediriger sur la page de paiement directement à l'étape 2 -> resumé de la demande
+ - Il pourra confirmer
+ - Vérifier ses infos
+ - Initier le paiement

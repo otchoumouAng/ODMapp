@@ -1,34 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 
-import MouvementStockFilter, { MouvementStockFilters } from './components/MouvementStockFilter';
+import MouvementStockFilter, { LotFilters } from './components/MouvementStockFilter';
 import MouvementStockTable from './components/MouvementStockTable';
 import MouvementStockDetailModal from './components/MouvementStockDetailModal';
 import { MouvementStock } from './type';
-import * as apiService from '../Shared/route';
+
+// Imports pour les services API partagés et spécifiques
+import * as sharedApiService from '../../Shared/routes';
+import * as mouvementApiService from './routes';
+
 import { Styles, Colors } from '../../styles/style';
 
 const MouvementStockScreen = () => {
   const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filters, setFilters] = useState<MouvementStockFilters>({});
+  const [filters, setFilters] = useState<LotFilters>({});
   const [selectedItem, setSelectedItem] = useState<MouvementStock | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   const fetchMouvements = useCallback(async () => {
     setLoading(true);
     try {
+      // Construction dynamique des paramètres de la requête
       const queryParams = new URLSearchParams();
+      
+      // On vérifie chaque filtre avant de l'ajouter aux paramètres
       if (filters.dateDebut) queryParams.append('datedebut', filters.dateDebut);
       if (filters.dateFin) queryParams.append('datefin', filters.dateFin);
-      if (filters.magasinID) queryParams.append('magasinID', filters.magasinID);
+      if (filters.siteID) queryParams.append('siteID', filters.siteID);
       if (filters.exportateurID) queryParams.append('exportateurID', filters.exportateurID);
-      if (filters.campagneID) queryPams.append('campagneID', filters.campagneID);
+      if (filters.campagneID) queryParams.append('campagneID', filters.campagneID);
+      if (filters.typeLotID) queryParams.append('typeLotID', filters.typeLotID);
+      // Ajoutez ici d'autres filtres si nécessaire
 
-      const data = await apiService.getMouvements(queryParams);
+      // Appel à la fonction API spécifique à ce module
+      const data = await mouvementApiService.getMouvements(queryParams);
       setMouvements(data);
     } catch (error) {
       console.error("Failed to fetch stock movements:", error);
+      // Idéalement, afficher un Toast ou une alerte à l'utilisateur ici
     } finally {
       setLoading(false);
     }
@@ -38,7 +49,7 @@ const MouvementStockScreen = () => {
     fetchMouvements();
   }, [fetchMouvements]);
 
-  const handleFilterChange = (newFilters: MouvementStockFilters) => {
+  const handleFilterChange = (newFilters: LotFilters) => {
     setFilters(newFilters);
   };
 
@@ -57,8 +68,17 @@ const MouvementStockScreen = () => {
   };
 
   return (
-    <View style={[Styles.container, { marginTop: 40 }]}>
-      <MouvementStockFilter onFilterChange={handleFilterChange} onReset={handleResetFilters} />
+    <View style={Styles.container}>
+      {/* Le composant Filtre est rendu ici. Il est configurable
+        pour afficher/masquer les champs selon le module.
+      */}
+      <MouvementStockFilter 
+        onFilterChange={handleFilterChange} 
+        onReset={handleResetFilters}
+        // Exemple de configuration pour ce module :
+        showSiteFilter={true}
+        showDateFilters={true}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />

@@ -1,27 +1,34 @@
-import axios from 'axios';
-import { Magasin } from './type';
-import { baseUrl } from '../../config';
+import { api, handleNetworkError } from '../Shared/route';
+import { TransfertLot } from '../Shared/type'; // Assumant un type partagé
+import { ReceptionData } from './type';
 
-const API_URL = `${baseUrl}/reception`;
-
-const handleNetworkError = (error: any) => {
-  if (error.response) {
-    // Erreur serveur (4xx, 5xx)
-    return new Error(`Erreur serveur: ${error.response.status} - ${error.response.data?.message || 'Pas de détails'}`);
-  } else if (error.request) {
-    // Pas de réponse du serveur
-    return new Error('Pas de réponse du serveur. Vérifiez votre connexion réseau.');
-  } else {
-    // Erreur de configuration
-    return new Error('Erreur de configuration de la requête: ' + error.message);
-  }
+/**
+ * Récupère la liste des lots en transit destinés au magasin de l'utilisateur.
+ * @param magasinId L'ID du magasin de l'utilisateur connecté.
+ */
+export const getLotsARecevoir = async (magasinId: number): Promise<TransfertLot[]> => {
+    try {
+        const params = new URLSearchParams();
+        params.append('statut', 'TR'); // 'TR' pour En Transit
+        params.append('magasinReceptionId', magasinId.toString());
+        
+        const response = await api.get('/transfertlot', { params });
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error);
+    }
 };
 
-export const getMagasins = async (): Promise<Magasin[]> => {
-  try {
-    const response = await axios.get<Magasin[]>(API_URL);
-    return response.data;
-  } catch (error) {
-  throw handleNetworkError(error);
-  }
+/**
+ * Valide la réception d'un lot.
+ * @param id L'ID du transfert.
+ * @param data Les données du formulaire de réception.
+ */
+export const validerReception = async (id: string, data: ReceptionData): Promise<any> => {
+    try {
+        const response = await api.put(`/transfertlot/${id}/reception`, data);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error);
+    }
 };

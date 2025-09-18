@@ -1,79 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { View, FlatList, ActivityIndicator, Text } from 'react-native';
-import Toast from 'react-native-toast-message';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Colors, Styles } from '../../styles/style';
 import LotCard from '../Shared/components/LotCard';
 import Filtre, { LotFilters } from '../Shared/components/Filtre';
-import { Lot } from './type';
-import { useNavigation } from '@react-navigation/native';
-
-const createMockUserLots = (): Lot[] => {
-  return [
-       { id: 'd1e2f3a4-b5c6-4186-8dec-c82a1059d999', campagneID: '2023/2024', exportateurID: 1, exportateurNom: 'TOUTON', productionID: '94c0447a-1c3a-4427-9ec5-a82fa1b150c1', numeroProduction: '23PA0003', typeLotID: 1, typeLotDesignation: 'Lot Standard', certificationID: 3, certificationDesignation: 'FAIRTRADE', dateLot: '2024-05-01T10:00:00', dateProduction: null, numeroLot: '23TEA0010', nombreSacs: 200, poidsBrut: 13000.0, tareSacs: 200.0, tarePalettes: 0.0, poidsNet: 12800.0, estQueue: false, estManuel: true, estReusine: false, statut: 'REC', desactive: false, creationUtilisateur: 'currentUser', creationDate: '2024-05-01T10:00:00.000', modificationUtilisateur: null, modificationDate: null, rowVersionKey: 'AAAAAAAApM8=', estQueueText: 'No', estManuelText: 'Yes', estReusineText: 'No', estFictif: false },
-       { id: 'b8c7d6e5-f4a3-4186-8dec-c82a1059d888', campagneID: '2022/2023', exportateurID: 1, exportateurNom: 'TOUTON', productionID: '94c0447a-1c3a-4427-9ec5-a82fa1b150c2', numeroProduction: '22PA0015', typeLotID: 2, typeLotDesignation: 'Lot Dégustation', certificationID: 2, certificationDesignation: 'UTZ', dateLot: '2023-11-20T11:30:00', dateProduction: null, numeroLot: '22TEA0150', nombreSacs: 500, poidsBrut: 32500.0, tareSacs: 500.0, tarePalettes: 0.0, poidsNet: 32000.0, estQueue: false, estManuel: true, estReusine: false, statut: 'REC', desactive: false, creationUtilisateur: 'currentUser', creationDate: '2023-11-20T11:30:00.000', modificationUtilisateur: null, modificationDate: null, rowVersionKey: 'AAAAAAAApN0=', estQueueText: 'No', estManuelText: 'Yes', estReusineText: 'No', estFictif: false },
-  ];
-};
+import { StockLot } from '../Stock/type';
+import { getStockLots } from './routes';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const SortieScreen = () => {
-  const [allLots, setAllLots] = useState<Lot[]>([]);
-  const [displayedLots, setDisplayedLots] = useState<Lot[]>([]);
+  const { user } = useContext(AuthContext);
+  const [lots, setLots] = useState<StockLot[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [filters, setFilters] = useState<LotFilters>({});
   const navigation = useNavigation();
 
+
+
+  
+
+  const defaultFilters = useMemo(() => {
+    if (user?.magasinID) {
+      return { magasinID: user.magasinID.toString() };
+    }
+    return {};
+  }, [user]);
+
   useEffect(() => {
-    setLoading(true);
-    const mockLots = createMockUserLots();
-    setAllLots(mockLots);
-    setDisplayedLots(mockLots);
-    setLoading(false);
-  }, []);
+    setFilters(defaultFilters);
+  }, [defaultFilters]);
 
-  useEffect(() => {
-    let filteredLots = [...allLots];
-
-    if (filters.numeroLot) {
-      filteredLots = filteredLots.filter(lot => 
-        lot.numeroLot.toLowerCase().includes(filters.numeroLot!.toLowerCase())
-      );
-    }
-    if (filters.campagneID) {
-      filteredLots = filteredLots.filter(lot => lot.campagneID === filters.campagneID);
-    }
-    if (filters.exportateurID) {
-        filteredLots = filteredLots.filter(lot => lot.exportateurID === parseInt(filters.exportateurID!, 10));
-    }
-    if (filters.typeLotID) {
-        filteredLots = filteredLots.filter(lot => lot.typeLotID === parseInt(filters.typeLotID!, 10));
-    }
-    if (filters.dateDebut) {
-        filteredLots = filteredLots.filter(lot => new Date(lot.dateLot) >= new Date(filters.dateDebut!));
-    }
-    if (filters.dateFin) {
-        filteredLots = filteredLots.filter(lot => new Date(lot.dateLot) <= new Date(filters.dateFin!));
-    }
-
-    setDisplayedLots(filteredLots);
-
-  }, [filters, allLots]);
-
-  const handleRemoveLot = (idToRemove: string) => {
-    const newAllLots = allLots.filter(lot => lot.id !== idToRemove);
-    setAllLots(newAllLots);
-    setDisplayedLots(newAllLots); 
-
-    Toast.show({
-        type: 'success',
-        text1: 'Opération réussie',
-        text2: 'La sortie du lot a été validée.',
-    });
-  };
-
-  const handleCardPress = (item: Lot) => {
-    navigation.navigate('Transfert', {
-        item: item,
-        onValider: handleRemoveLot
-    });
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchLots = async () => {
+        if (Object.keys(filters).length === 0) {
+            setLots([]);
+            return;
+        }
+        setLoading(true);
+        try {
+          const data = await getStockLots(filters);
+          setLots(data);
+        } catch (error) {
+          console.error("Failed to load lots for sortie:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchLots();
+    }, [filters])
+  );
+  
+  const handleCardPress = (item: StockLot) => {
+    navigation.navigate('Transfert', { item });
   };
 
   const handleFilterChange = (newFilters: LotFilters) => {
@@ -81,7 +60,7 @@ const SortieScreen = () => {
   };
 
   const handleResetFilters = () => {
-    setFilters({});
+    setFilters(defaultFilters);
   }
 
   if (loading) {
@@ -92,11 +71,59 @@ const SortieScreen = () => {
     <View style={[Styles.container, { backgroundColor: Colors.lightGray }]}>
       <Filtre onFilterChange={handleFilterChange} onReset={handleResetFilters} />
       <FlatList
-        data={displayedLots}
-        renderItem={({ item }) => <LotCard item={item} onPress={() => handleCardPress(item)} />}
-        keyExtractor={(item) => item.id}
+        data={lots}
+        renderItem={({ item }) => (
+            <LotCard 
+                item={{
+                    // ## CORRECTION APPLIQUÉE ICI ##
+                    // On construit un objet `Lot` complet et sûr pour `LotCard`
+                    id: item.reference, // Utilise la référence comme ID unique
+                    numeroLot: item.reference,
+                    poidsNet: item.poidsNetAccepte ?? 0,
+                    exportateurNom: item.exportateurNom ?? 'N/A',
+                    statut: 'AP',
+                    // Ajout de valeurs par défaut pour tous les champs requis par le type `Lot` partagé
+                    dateLot: new Date().toISOString(),
+                    campagneID: item.campagneID ?? 'N/A',
+                    typeLotDesignation: item.libelleTypeLot ?? 'N/A',
+                    certificationDesignation: item.nomCertification ?? 'N/A',
+                    estQueue: false,
+                    estManuel: false,
+                    // Fournir des valeurs par défaut pour les autres champs obligatoires de `Lot`
+                    exportateurID: item.exportateurID,
+                    productionID: '',
+                    numeroProduction: '',
+                    typeLotID: item.typeLotID ?? 0,
+                    certificationID: item.certificationID ?? 0,
+                    nombreSacs: item.quantite ?? 0,
+                    poidsBrut: item.poidsBrut ?? 0,
+                    tareSacs: 0,
+                    tarePalettes: 0,
+                    estReusine: false,
+                    desactive: false,
+                    creationUtilisateur: '',
+                    creationDate: new Date().toISOString(),
+                    estQueueText: 'No',
+                    estManuelText: 'Yes',
+                    estReusineText: 'No',
+                    estFictif: false,
+                }}
+                onPress={() => handleCardPress(item)} 
+            />
+        )}
+        keyExtractor={(item, index) => {
+        // 1. On priorise l'ID s'il existe. C'est le cas idéal.
+        if (item.id) {
+          return item.id.toString();
+        }
+        
+        // 2. Sinon, on crée une clé composite comme "plan B".
+        // On combine des champs qui ont de fortes chances d'être uniques ensemble.
+        // L'ajout de `index` à la fin est la garantie ULTIME que la clé sera unique pour le rendu.
+        return `${item.reference}-${item.exportateurID}-${index}`;
+      }}
         contentContainerStyle={Styles.list}
-        ListEmptyComponent={<Text style={Styles.emptyText}>Aucun lot à expédier.</Text>}
+        ListEmptyComponent={<Text style={Styles.emptyText}>Aucun lot à expédier pour les critères sélectionnés.</Text>}
       />
     </View>
   );

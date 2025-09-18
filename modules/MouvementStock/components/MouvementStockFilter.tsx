@@ -13,7 +13,6 @@ export interface MouvementStockFilters {
   magasinID?: string;
   exportateurID?: string;
   campagneID?: string;
-  siteID?: string;
   mouvementTypeID?: string;
 }
 
@@ -31,7 +30,6 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
 
   const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [exportateurs, setExportateurs] = useState<any[]>([]);
-  const [sites, setSites] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [campagnes, setCampagnes] = useState<string[]>([]);
 
@@ -40,7 +38,6 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
       try {
         setMagasins(await apiService.getMagasins());
         setExportateurs(await apiService.getExportateurs());
-        setSites(await apiService.getSites());
         setTypes(await apiService.getMouvementStockTypes());
         setCampagnes(await apiService.getCampagnes());
         setDropdownsLoaded(true);
@@ -116,7 +113,6 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
         <ScrollView>
           {renderPicker("Magasins", filters.magasinID, (val) => handleValueChange('magasinID', val), magasins, 'designation', 'id')}
           {renderPicker("Exportateurs", filters.exportateurID, (val) => handleValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
-          {renderPicker("Sites", filters.siteID, (val) => handleValueChange('siteID', val), sites, 'nom', 'id')}
           {renderPicker("Types", filters.mouvementTypeID, (val) => handleValueChange('mouvementTypeID', val), types, 'designation', 'id')}
           
           <View style={Styles.filterPickerContainer}>

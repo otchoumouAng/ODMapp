@@ -1,7 +1,17 @@
 export interface User {
   id: string;
-  username: string;
-  email: string;
+  name: string;
+  userName: string;
+  isDisabled: boolean;
+  locationID: number;
+  locationName: string; // Nouveau
+  employeeNumber?: string;
+  functionName: string;
+  email: string; // Renommé
+  mustChangePwd?: boolean;
+  magasinID?: number; // Nouveau
+  magasinNom?: string; // Nouveau
+  // Ajoutez d'autres champs au besoin
 }
 
 export interface LoginCredentials {
@@ -11,7 +21,6 @@ export interface LoginCredentials {
 
 export interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
   isLoading: boolean;

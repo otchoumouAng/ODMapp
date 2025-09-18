@@ -2,13 +2,15 @@ import axios from 'axios';
 import { baseUrl } from '../../config';
 import { LoginCredentials, User } from './types';
 
-export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<{ token: string; user: User }> => {
-    const response = await axios.post(`${baseUrl}/auth/login`, credentials);
+// On utilise un service d'API dédié pour l'authentification
+export const authService = {
+  login: async (credentials: LoginCredentials): Promise<User> => {
+    // L'endpoint correspond au contrôleur C#
+    const response = await axios.post(`${baseUrl}/user/login`, credentials);
     return response.data;
   },
 
   logout: async (): Promise<void> => {
-    // Implémentation optionnelle pour invalider le token côté serveur
+    // Logique de déconnexion si nécessaire
   },
 };
