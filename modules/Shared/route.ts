@@ -33,18 +33,20 @@ const getDropdownData = async (endpoint: string): Promise<any[]> => {
     }
 };
 
+import { mockMouvements } from '../MouvementStock/__mocks__/MouvementStock.mock';
+
 /**
  * Fetches the list of stock movements with optional filters.
  * @param params - The query parameters for filtering.
  */
 export const getMouvements = async (params: URLSearchParams): Promise<MouvementStock[]> => {
-  try {
-    const response = await api.get('/mouvementstock', { params });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching stock movements:', error);
-    throw error;
-  }
+  console.log('Fetching mock stock movements with params:', params.toString());
+  // Simulate API call delay
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve(mockMouvements);
+    }, 500);
+  });
 };
 
 export const getExportateurs = () => getDropdownData('exportateur');
