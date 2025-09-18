@@ -21,6 +21,7 @@ export const getStockLots = async (filters: LotFilters): Promise<StockLot[]> => 
             params.append('exportateurID', filters.exportateurID);
         }
         
+        console.log("Requesting /stock/lots with params:", params.toString());
         const response = await api.get('/stock/lots', { params });
         return response.data;
     } catch (error) {
