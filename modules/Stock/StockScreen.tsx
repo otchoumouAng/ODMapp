@@ -35,7 +35,7 @@ const StockScreen = () => {
 
   const defaultFilters = useMemo(() => {
     if (user?.magasinID) {
-      return { magasinID: user.magasinID.toString() };
+      return { magasinId: user.magasinID.toString() };
     }
     return {};
   }, [user]);

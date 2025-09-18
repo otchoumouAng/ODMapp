@@ -7,8 +7,8 @@ export const getStockLots = async (filters: LotFilters): Promise<StockLot[]> => 
         const params = new URLSearchParams();
         
         // Le magasinID est obligatoire et doit toujours être envoyé.
-        if (filters.magasinID) {
-            params.append('magasinID', filters.magasinID);
+        if (filters.magasinId) {
+            params.append('magasinId', filters.magasinId);
         }
 
         // ## CORRECTION ##

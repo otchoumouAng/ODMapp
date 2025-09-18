@@ -8,7 +8,7 @@ import { Styles, Colors } from '../../../styles/style';
 
 // Interface mise à jour avec tous les filtres requis
 export interface StockFilters {
-  magasinID?: string;
+  magasinId?: string;
   campagneID?: string;
   exportateurID?: string;
   dateDebut?: string;
@@ -100,7 +100,7 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
       </TouchableOpacity>
       {isExpanded && (
         <ScrollView>
-          {renderPicker("Magasins", filters.magasinID, (v) => handleValueChange('magasinID', v), magasins, 'designation', 'id')}
+          {renderPicker("Magasins", filters.magasinId, (v) => handleValueChange('magasinId', v), magasins, 'designation', 'id')}
           <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Campagne</Text>
               <Picker selectedValue={filters.campagneID || ""} onValueChange={(v) => handleValueChange('campagneID', v)} style={Styles.filterPicker} mode="dropdown">

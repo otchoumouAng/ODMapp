@@ -7,6 +7,7 @@ import * as apiService from '../../Shared/route';
 import { Styles, Colors } from '../../../styles/style';
 
 export interface LotFilters {
+  magasinId?: string;
   campagneID?: string;
   exportateurID?: string;
   produitID?: string;
