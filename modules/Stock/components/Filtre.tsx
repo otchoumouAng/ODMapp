@@ -11,21 +11,23 @@ export interface StockFilters {
   magasinID?: string;
   campagneID?: string;
   exportateurID?: string;
-  dateDebut?: string;
-  dateFin?: string;
+  //dateDebut?: string;
+  //dateFin?: string;
   produitID?: string;
   certificationID?: string;
   typeLotID?: string;
-  gradeID?: string; // Nom simplifié pour 'gradeLotID'
+  gradeLotID?: string;
 }
 
 interface StockFiltreProps {
   initialFilters: StockFilters;
   onFilterChange: (filters: StockFilters) => void;
   onReset: () => void;
+  lockedMagasinID?: string;
+  lockedMagasinNom?: string;
 }
 
-const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChange, onReset }) => {
+const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChange, onReset,lockedMagasinID,lockedMagasinNom}) => {
   const [filters, setFilters] = useState<StockFilters>(initialFilters);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   
@@ -39,8 +41,8 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
   const [grades, setGrades] = useState<any[]>([]);
 
   // États pour les dates
-  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
-  const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
+  //const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+  //const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
 
   useEffect(() => { setFilters(initialFilters); }, [initialFilters]);
 
@@ -67,7 +69,7 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
     setFilters(newFilters);
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+/*  const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
     if (selectedDate && datePickerTarget) {
       handleValueChange(datePickerTarget, selectedDate.toISOString().split('T')[0]);
@@ -77,7 +79,7 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
   const showPickerFor = (target: 'dateDebut' | 'dateFin') => {
     setDatePickerTarget(target);
     setShowDatePicker(true);
-  };
+  };*/
 
   const handleApplyFilters = () => { onFilterChange(filters); setIsExpanded(false); };
   const handleResetFilters = () => { setFilters({}); onReset(); };
@@ -100,7 +102,16 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
       </TouchableOpacity>
       {isExpanded && (
         <ScrollView>
-          {renderPicker("Magasins", filters.magasinID, (v) => handleValueChange('magasinID', v), magasins, 'designation', 'id')}
+
+          {lockedMagasinID && (
+            <View style={Styles.filterPickerContainer}>
+              <Text style={Styles.filterPickerLabel}>Magasin</Text>
+              <View style={localStyles.lockedInputContainer}>
+                <Text style={localStyles.lockedInputText}>{lockedMagasinNom || `Magasin ID: ${lockedMagasinID}`}</Text>
+              </View>
+            </View>
+          )}
+
           <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Campagne</Text>
               <Picker selectedValue={filters.campagneID || ""} onValueChange={(v) => handleValueChange('campagneID', v)} style={Styles.filterPicker} mode="dropdown">
@@ -108,30 +119,18 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
                   {campagnes.map(c => <Picker.Item key={c} label={c} value={c} />)}
               </Picker>
           </View>
+
           {renderPicker("Exportateurs", filters.exportateurID, (v) => handleValueChange('exportateurID', v), exportateurs, 'nom', 'id')}
-          <View style={Styles.filterPickerContainer}>
-            <Text style={Styles.filterPickerLabel}>Date de début</Text>
-            <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateDebut')}>
-                <CalendarBlank size={20} color={Colors.darkGray} /><Text style={localStyles.dateText}>{filters.dateDebut || "Sélectionner"}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={Styles.filterPickerContainer}>
-            <Text style={Styles.filterPickerLabel}>Date de fin</Text>
-            <TouchableOpacity style={[Styles.filterInput, localStyles.dateButtonContainer]} onPress={() => showPickerFor('dateFin')}>
-                <CalendarBlank size={20} color={Colors.darkGray} /><Text style={localStyles.dateText}>{filters.dateFin || "Sélectionner"}</Text>
-            </TouchableOpacity>
-          </View>
           {renderPicker("Produits", filters.produitID, (v) => handleValueChange('produitID', v), produits)}
           {renderPicker("Certifications", filters.certificationID, (v) => handleValueChange('certificationID', v), certifications)}
           {renderPicker("Types de Lot", filters.typeLotID, (v) => handleValueChange('typeLotID', v), lotTypes)}
-          {renderPicker("Grades", filters.gradeID, (v) => handleValueChange('gradeID', v), grades)}
+          {renderPicker("Grades", filters.gradeLotID, (v) => handleValueChange('gradeLotID', v), grades, 'designation', 'id')}
           <View style={Styles.filterButtonContainer}>
             <Button title="Réinitialiser" onPress={handleResetFilters} color={Colors.danger} />
             <Button title="Appliquer" onPress={handleApplyFilters} color={Colors.primary}/>
           </View>
         </ScrollView>
       )}
-      {showDatePicker && ( <DateTimePicker value={datePickerTarget && filters[datePickerTarget] ? new Date(filters[datePickerTarget]!) : new Date()} mode="date" display="default" onChange={handleDateChange} /> )}
     </View>
   );
 };
@@ -140,7 +139,20 @@ const localStyles = StyleSheet.create({
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottomWidth: 1, borderBottomColor: Colors.lightGray },
     headerLeft: { flexDirection: 'row', alignItems: 'center' },
     dateButtonContainer: { justifyContent: 'center' },
-    dateText: { marginLeft: 10, color: '#333' }
+    dateText: { marginLeft: 10, color: '#333' },
+
+    lockedInputContainer: {
+    backgroundColor: '#e9ecef', // Couleur de fond pour indiquer que c'est désactivé
+    paddingHorizontal: 10,
+    paddingVertical: 15,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ced4da',
+  },
+  lockedInputText: {
+    color: '#495057', // Couleur de texte
+    fontSize: 16,
+  },
 });
 
 export default StockFiltre;

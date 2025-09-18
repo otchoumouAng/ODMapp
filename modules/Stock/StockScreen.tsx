@@ -44,7 +44,7 @@ const StockScreen = () => {
     setFilters(defaultFilters);
   }, [defaultFilters]);
 
-  useEffect(() => {
+/*  useEffect(() => {
     const fetchLots = async () => {
       if (Object.keys(filters).length === 0 && Object.keys(defaultFilters).length === 0) {
         setStockLots([]);
@@ -64,7 +64,30 @@ const StockScreen = () => {
     };
     
     fetchLots();
-  }, [filters]); 
+  }, [filters]);*/
+
+  useEffect(() => {
+  const fetchLots = async () => {
+    // Vérification plus robuste
+    if (!filters.magasinID) {
+      setStockLots([]);
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const data = await getStockLots(filters);
+      setStockLots(data);
+    } catch (error) {
+      console.error("Failed to fetch lots in stock:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  fetchLots();
+}, [filters]); 
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -104,6 +127,8 @@ const StockScreen = () => {
         initialFilters={filters}
         onFilterChange={handleFilterChange} 
         onReset={handleResetFilters} 
+        lockedMagasinID={user?.magasinID?.toString()}
+        lockedMagasinNom={user?.magasinNom}
       />
 
       <View style={localStyles.card}>

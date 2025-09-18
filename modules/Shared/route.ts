@@ -12,7 +12,7 @@ export const api = axios.create({
 });
 
 
-export const handleNetworkError = (error: any): Error => {
+/*export const handleNetworkError = (error: any): Error => {
     // Log de l'erreur complète pour le débogage
     console.error("AXIOS ERROR:", JSON.stringify(error, null, 2));
 
@@ -41,6 +41,20 @@ export const handleNetworkError = (error: any): Error => {
     else {
         return new Error('Erreur de configuration de la requête: ' + error.message);
     }
+};*/
+
+
+export const handleNetworkError = (error: any, context: string) => {
+  if (error.response) {
+    console.error(`Erreur ${error.response.status} dans ${context}:`, error.response.data);
+    return new Error(`Erreur serveur ${error.response.status}: ${error.response.data.message || error.response.data}`);
+  } else if (error.request) {
+    console.error("Pas de réponse du serveur:", error.request);
+    return new Error("Pas de réponse du serveur. Vérifiez votre connexion.");
+  } else {
+    console.error("Erreur de configuration:", error.message);
+    return new Error("Erreur de configuration de la requête.");
+  }
 };
 
 /**
