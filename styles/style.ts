@@ -315,4 +315,27 @@ export const Styles = StyleSheet.create({
   lotInfoBold: {
     fontWeight: 'bold',
   },
+  picker: {
+    backgroundColor: Colors.card,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 10,
+    height: 50,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  emptyListText: {
+    textAlign: 'center',
+    marginTop: 50,
+    fontSize: 16,
+    color: Colors.textMedium,
+  },
+   errorText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: Colors.error,
+    padding: 20,
+  },
 });

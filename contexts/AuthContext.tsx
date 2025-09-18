@@ -45,6 +45,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: '1',
         username: credentials.username,
         email: `${credentials.username}@example.com`,
+        magasinId: 1,
       };
       
       const mockToken = 'mock-token-' + Math.random().toString(36).substring(2);

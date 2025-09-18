@@ -2,6 +2,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  magasinId: number;
 }
 
 export interface LoginCredentials {

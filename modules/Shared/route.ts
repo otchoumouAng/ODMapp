@@ -2,6 +2,7 @@ import axios from 'axios';
 import { MouvementStock } from '../modules/MouvementStock/type';
 import { baseUrl } from '../../config';
 import { Magasin } from './type';
+import { Lot } from './type';
 
 // Create an axios instance with a base URL
 export const api = axios.create({
@@ -45,6 +46,22 @@ export const getMouvements = async (params: URLSearchParams): Promise<MouvementS
     console.error('Error fetching stock movements:', error);
     throw error;
   }
+};
+
+/**
+ * Fetches the list of stock lots for a given magasin.
+ * @param magasinId - The ID of the magasin.
+ */
+export const getStockLots = async (magasinId: string): Promise<Lot[]> => {
+    try {
+        const response = await api.get('/stock/lots', {
+            params: { magasinId }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to fetch lots in stock:', error);
+        throw error;
+    }
 };
 
 export const getExportateurs = () => getDropdownData('exportateur');
