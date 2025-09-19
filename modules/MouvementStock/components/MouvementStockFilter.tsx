@@ -18,12 +18,12 @@ export interface MouvementStockFilters {
 }
 
 interface MouvementStockFilterProps {
-  onFilterChange: (filters: MouvementStockFilters) => void;
+  filters: MouvementStockFilters;
+  onValueChange: (name: keyof MouvementStockFilters, value: any) => void;
   onReset: () => void;
 }
 
-const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterChange, onReset }) => {
-  const [filters, setFilters] = useState<MouvementStockFilters>({});
+const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, onValueChange, onReset }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
@@ -48,30 +48,18 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
     };
 
     if (isExpanded && !dropdownsLoaded) {
-        loadDropdownData();
+      loadDropdownData();
     }
   }, [isExpanded, dropdownsLoaded]);
 
-  const handleValueChange = (name: keyof MouvementStockFilters, value: string | number) => {
-    setFilters(prev => ({ ...prev, [name]: String(value) }));
-  };
-
-  const handleApplyFilters = () => {
-    onFilterChange(filters);
-    setIsExpanded(false);
-  };
-
-  const handleResetFilters = () => {
-    setFilters({});
-    onReset();
-    setIsExpanded(false);
-  };
-
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios'); // Sur iOS, on peut vouloir le garder ouvert
+    setShowDatePicker(Platform.OS === 'ios');
     if (selectedDate && datePickerTarget) {
       const formattedDate = selectedDate.toISOString().split('T')[0];
-      handleValueChange(datePickerTarget, formattedDate);
+      onValueChange(datePickerTarget, formattedDate);
+      setDatePickerTarget(null); // Reset target after selection
+    } else {
+      setShowDatePicker(false); // Hide if no date is selected (e.g., user cancels)
     }
   };
 
@@ -112,13 +100,13 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
 
       {isExpanded && (
         <ScrollView>
-          {renderPicker("Magasins", filters.magasinID, (val) => handleValueChange('magasinID', val), magasins, 'designation', 'id')}
-          {renderPicker("Exportateurs", filters.exportateurID, (val) => handleValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
-          {renderPicker("Types", filters.mouvementTypeID, (val) => handleValueChange('mouvementTypeID', val), types, 'designation', 'id')}
+          {renderPicker("Magasins", filters.magasinID, (val) => onValueChange('magasinID', val), magasins, 'designation', 'id')}
+          {renderPicker("Exportateurs", filters.exportateurID, (val) => onValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
+          {renderPicker("Types", filters.mouvementTypeID, (val) => onValueChange('mouvementTypeID', val), types, 'designation', 'id')}
 
           <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Sens</Text>
-              <Picker selectedValue={filters.sens} onValueChange={(val) => handleValueChange('sens', val)} style={Styles.filterPicker} mode="dropdown">
+              <Picker selectedValue={filters.sens} onValueChange={(val) => onValueChange('sens', val)} style={Styles.filterPicker} mode="dropdown">
                   <Picker.Item label="-- Tous les sens --" value="" />
                   <Picker.Item label="Entrée" value="1" />
                   <Picker.Item label="Sortie" value="-1" />
@@ -127,7 +115,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
           
           <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Campagnes</Text>
-              <Picker selectedValue={filters.campagneID} onValueChange={(val) => handleValueChange('campagneID', val)} style={Styles.filterPicker} mode="dropdown">
+              <Picker selectedValue={filters.campagneID} onValueChange={(val) => onValueChange('campagneID', val)} style={Styles.filterPicker} mode="dropdown">
                   <Picker.Item label="-- Toutes les campagnes --" value="" />
                   {campagnes.map(c => <Picker.Item key={c} label={c} value={c} />)}
               </Picker>
@@ -158,8 +146,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
           </View>
 
           <View style={Styles.filterButtonContainer}>
-            <Button title="Réinitialiser" onPress={handleResetFilters} color={Colors.danger} />
-            <Button title="Appliquer" onPress={handleApplyFilters} color={Colors.primary}/>
+            <Button title="Réinitialiser" onPress={onReset} color={Colors.danger} />
           </View>
         </ScrollView>
       )}

@@ -68,8 +68,8 @@ const MouvementStockScreen = () => {
     fetchMouvements();
   }, [fetchMouvements]);
 
-  const handleFilterChange = (newFilters: MouvementStockFilters) => {
-    setFilters(newFilters);
+  const handleFilterValueChange = (name: keyof MouvementStockFilters, value: any) => {
+    setFilters(prev => ({...prev, [name]: value}));
   };
 
   const handleResetFilters = () => {
@@ -95,7 +95,8 @@ const MouvementStockScreen = () => {
         pour afficher/masquer les champs selon le module.
       */}
       <MouvementStockFilter 
-        onFilterChange={handleFilterChange} 
+        filters={filters}
+        onValueChange={handleFilterValueChange}
         onReset={handleResetFilters}
         // Exemple de configuration pour ce module :
         showSiteFilter={true}
