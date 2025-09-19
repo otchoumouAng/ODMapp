@@ -14,6 +14,7 @@ export interface MouvementStockFilters {
   exportateurID?: string;
   campagneID?: string;
   mouvementTypeID?: string;
+  sens?: string;
 }
 
 interface MouvementStockFilterProps {
@@ -114,6 +115,15 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ onFilterCha
           {renderPicker("Magasins", filters.magasinID, (val) => handleValueChange('magasinID', val), magasins, 'designation', 'id')}
           {renderPicker("Exportateurs", filters.exportateurID, (val) => handleValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
           {renderPicker("Types", filters.mouvementTypeID, (val) => handleValueChange('mouvementTypeID', val), types, 'designation', 'id')}
+
+          <View style={Styles.filterPickerContainer}>
+              <Text style={Styles.filterPickerLabel}>Sens</Text>
+              <Picker selectedValue={filters.sens} onValueChange={(val) => handleValueChange('sens', val)} style={Styles.filterPicker} mode="dropdown">
+                  <Picker.Item label="-- Tous les sens --" value="" />
+                  <Picker.Item label="Entrée" value="1" />
+                  <Picker.Item label="Sortie" value="-1" />
+              </Picker>
+          </View>
           
           <View style={Styles.filterPickerContainer}>
               <Text style={Styles.filterPickerLabel}>Campagnes</Text>

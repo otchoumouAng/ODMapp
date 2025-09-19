@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { ArrowCircleUp, ArrowCircleDown, Archive } from 'phosphor-react-native';
 
-import MouvementStockFilter, { LotFilters } from './components/MouvementStockFilter';
+import MouvementStockFilter, { MouvementStockFilters } from './components/MouvementStockFilter';
 import MouvementStockTable from './components/MouvementStockTable';
 import MouvementStockDetailModal from './components/MouvementStockDetailModal';
 import { MouvementStock } from './type';
@@ -15,9 +16,21 @@ import { Styles, Colors } from '../../styles/style';
 const MouvementStockScreen = () => {
   const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filters, setFilters] = useState<LotFilters>({});
+  const [filters, setFilters] = useState<MouvementStockFilters>({});
   const [selectedItem, setSelectedItem] = useState<MouvementStock | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
+
+  const summary = useMemo(() => {
+    return mouvements.reduce((acc, mouvement) => {
+        if (mouvement.sens > 0) { // Entrée
+            acc.totalEntreeSacs += mouvement.quantite ?? 0;
+            acc.totalEntreePoidsNet += mouvement.poidsNetLivre ?? 0;
+        } else { // Sortie
+            acc.totalSortiePoidsNet += mouvement.poidsNetLivre ?? 0;
+        }
+        return acc;
+    }, { totalEntreeSacs: 0, totalEntreePoidsNet: 0, totalSortiePoidsNet: 0 });
+  }, [mouvements]);
 
   const fetchMouvements = useCallback(async () => {
     setLoading(true);
@@ -32,6 +45,7 @@ const MouvementStockScreen = () => {
       if (filters.exportateurID) queryParams.append('exportateurID', filters.exportateurID);
       if (filters.campagneID) queryParams.append('campagneID', filters.campagneID);
       if (filters.typeLotID) queryParams.append('typeLotID', filters.typeLotID);
+      if (filters.sens) queryParams.append('sens', filters.sens);
       // Ajoutez ici d'autres filtres si nécessaire
 
       // Appel à la fonction API spécifique à ce module
@@ -80,6 +94,27 @@ const MouvementStockScreen = () => {
         showDateFilters={true}
       />
 
+      <View style={localStyles.card}>
+        <Text style={localStyles.cardTitle}>Résumé des Mouvements</Text>
+        <View style={localStyles.summaryContainer}>
+            <View style={localStyles.summaryItem}>
+                <ArrowCircleUp size={28} color={Colors.success} />
+                <Text style={localStyles.summaryValue}>{summary.totalEntreeSacs}</Text>
+                <Text style={localStyles.summaryLabel}>Sacs Entrés</Text>
+            </View>
+            <View style={localStyles.summaryItem}>
+                <Archive size={28} color={Colors.primary} />
+                <Text style={localStyles.summaryValue}>{summary.totalEntreePoidsNet.toFixed(0)} kg</Text>
+                <Text style={localStyles.summaryLabel}>Poids Net Entré</Text>
+            </View>
+            <View style={localStyles.summaryItem}>
+                <ArrowCircleDown size={28} color={Colors.danger} />
+                <Text style={localStyles.summaryValue}>{summary.totalSortiePoidsNet.toFixed(0)} kg</Text>
+                <Text style={localStyles.summaryLabel}>Poids Net Sorti</Text>
+            </View>
+        </View>
+      </View>
+
       {loading ? (
         <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />
       ) : (
@@ -96,3 +131,12 @@ const MouvementStockScreen = () => {
 };
 
 export default MouvementStockScreen;
+
+const localStyles = StyleSheet.create({
+    card: { backgroundColor: '#ffffff', borderRadius: 12, marginHorizontal: 12, marginBottom: 16, padding: 16, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, },
+    cardTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.dark, marginBottom: 12, },
+    summaryContainer: { flexDirection: 'row', justifyContent: 'space-around', },
+    summaryItem: { alignItems: 'center', paddingHorizontal: 10, },
+    summaryValue: { fontSize: 18, fontWeight: 'bold', color: Colors.dark, marginTop: 4, },
+    summaryLabel: { fontSize: 12, color: Colors.darkGray, marginTop: 2, },
+});
