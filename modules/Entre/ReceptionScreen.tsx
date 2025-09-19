@@ -76,7 +76,10 @@ const ReceptionScreen = () => {
                 poidsBrut: parseFloat(poidsBrut),
                 poidsNetLivre: parseFloat(poidsNet),
                 creationUtilisateur: user.name,
-                // Le backend devrait remplir les autres champs comme les noms, etc.
+                campagneID: item.campagneID,
+                commentaire: commentaire,
+                reference2: numBordereau,
+                statut: 'VALID',
             };
 
             await createMouvementStock(mouvementData);

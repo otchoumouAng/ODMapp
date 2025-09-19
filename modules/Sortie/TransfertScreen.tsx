@@ -118,7 +118,10 @@ const TransfertScreen = () => {
                 poidsBrut: item.poidsBrut ?? 0,
                 poidsNetLivre: item.poidsNetAccepte ?? 0,
                 creationUtilisateur: user.name,
-                // Le backend devrait remplir les autres champs comme les noms, etc.
+                campagneID: item.campagneID,
+                commentaire: commentaire,
+                reference2: numBordereau,
+                statut: 'VALID',
             };
 
             await createMouvementStock(mouvementData);
