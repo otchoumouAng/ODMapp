@@ -14,22 +14,27 @@ import * as mouvementApiService from './routes';
 import { Styles, Colors } from '../../styles/style';
 
 const MouvementStockScreen = () => {
+  const getTodayDateString = () => new Date().toISOString().split('T')[0];
+
   const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [filters, setFilters] = useState<MouvementStockFilters>({});
+  const [filters, setFilters] = useState<MouvementStockFilters>({
+    dateDebut: getTodayDateString(),
+    dateFin: getTodayDateString(),
+  });
   const [selectedItem, setSelectedItem] = useState<MouvementStock | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
   const summary = useMemo(() => {
     return mouvements.reduce((acc, mouvement) => {
         if (mouvement.sens > 0) { // Entrée
-            acc.totalEntreeSacs += mouvement.quantite ?? 0;
+            acc.totalEntreeLots += 1;
             acc.totalEntreePoidsNet += mouvement.poidsNetLivre ?? 0;
         } else { // Sortie
             acc.totalSortiePoidsNet += mouvement.poidsNetLivre ?? 0;
         }
         return acc;
-    }, { totalEntreeSacs: 0, totalEntreePoidsNet: 0, totalSortiePoidsNet: 0 });
+    }, { totalEntreeLots: 0, totalEntreePoidsNet: 0, totalSortiePoidsNet: 0 });
   }, [mouvements]);
 
   const fetchMouvements = useCallback(async () => {
@@ -63,12 +68,15 @@ const MouvementStockScreen = () => {
     fetchMouvements();
   }, [fetchMouvements]);
 
-  const handleFilterChange = (newFilters: LotFilters) => {
+  const handleFilterChange = (newFilters: MouvementStockFilters) => {
     setFilters(newFilters);
   };
 
   const handleResetFilters = () => {
-    setFilters({});
+    setFilters({
+      dateDebut: getTodayDateString(),
+      dateFin: getTodayDateString(),
+    });
   }
 
   const handleRowPress = (item: MouvementStock) => {
@@ -99,8 +107,8 @@ const MouvementStockScreen = () => {
         <View style={localStyles.summaryContainer}>
             <View style={localStyles.summaryItem}>
                 <ArrowCircleUp size={28} color={Colors.success} />
-                <Text style={localStyles.summaryValue}>{summary.totalEntreeSacs}</Text>
-                <Text style={localStyles.summaryLabel}>Sacs Entrés</Text>
+                <Text style={localStyles.summaryValue}>{summary.totalEntreeLots}</Text>
+                <Text style={localStyles.summaryLabel}>Lots Entrés</Text>
             </View>
             <View style={localStyles.summaryItem}>
                 <Archive size={28} color={Colors.primary} />
