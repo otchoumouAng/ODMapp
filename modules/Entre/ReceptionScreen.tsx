@@ -76,7 +76,7 @@ const ReceptionScreen = () => {
                 poidsBrut: parseFloat(poidsBrut),
                 poidsNetLivre: parseFloat(poidsNet),
                 creationUtilisateur: user.name,
-                campagneID: item.campagneID,
+                campagneID: item.campagneID || "2023/2024",
                 commentaire: commentaire,
                 reference2: numBordereau,
                 statut: 'VALID',

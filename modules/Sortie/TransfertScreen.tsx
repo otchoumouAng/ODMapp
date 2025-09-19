@@ -118,7 +118,7 @@ const TransfertScreen = () => {
                 poidsBrut: item.poidsBrut ?? 0,
                 poidsNetLivre: item.poidsNetAccepte ?? 0,
                 creationUtilisateur: user.name,
-                campagneID: item.campagneID,
+                campagneID: item.campagneID || "2023/2024",
                 commentaire: commentaire,
                 reference2: numBordereau,
                 statut: 'VALID',
