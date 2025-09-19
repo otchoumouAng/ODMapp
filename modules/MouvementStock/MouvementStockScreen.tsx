@@ -23,7 +23,7 @@ const MouvementStockScreen = () => {
       if (filters.dateFin) queryParams.append('datefin', filters.dateFin);
       if (filters.magasinID) queryParams.append('magasinID', filters.magasinID);
       if (filters.exportateurID) queryParams.append('exportateurID', filters.exportateurID);
-      if (filters.campagneID) queryPams.append('campagneID', filters.campagneID);
+      if (filters.campagneID) queryParams.append('campagneID', filters.campagneID);
 
       const data = await apiService.getMouvements(queryParams);
       setMouvements(data);

@@ -47,6 +47,17 @@ export const getMouvements = async (params: URLSearchParams): Promise<MouvementS
   }
 };
 
+export type AddMouvementPayload = Omit<MouvementStock, 'id' | 'creationDate' | 'modificationDate' | 'rowVersionKey'>;
+
+export const addMouvement = async (payload: AddMouvementPayload): Promise<MouvementStock> => {
+    try {
+        const response = await api.post('/mouvementstock', payload);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error);
+    }
+};
+
 export const getExportateurs = () => getDropdownData('exportateur');
 export const getSites = () => getDropdownData('site');
 export const getMouvementStockTypes = () => getDropdownData('mouvementstocktype');

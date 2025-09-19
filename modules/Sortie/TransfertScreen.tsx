@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, Button, Alert, TextInput, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Lot, Magasin } from './type';
 import { getMagasins } from '../Shared/route';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import * as apiService from '../Shared/route';
+import { AddMouvementPayload } from '../Shared/route';
+import { AuthContext } from '../../contexts/AuthContext';
 
 interface TransfertData {
     operationType: 'transfert' | 'export';
@@ -19,6 +22,7 @@ interface TransfertData {
 const TransfertScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const { user } = useContext(AuthContext);
   const { item, onValider } = route.params as { item: Lot; onValider: (id: string) => void };
 
 
@@ -79,25 +83,51 @@ const TransfertScreen = () => {
             { text: "Annuler", style: "cancel" },
             {
                 text: "Confirmer",
-                onPress: () => {
-                    // Étape 3: Exécuter la logique après confirmation
-                    const data: TransfertData = {
-                        operationType,
-                        transfertMode,
-                        destinationMagasinId: destinationMagasinId,
-                        tracteur,
-                        remorque,
-                        nombreSacs,
-                        nombrePalettes,
-                    };
+                onPress: async () => {
+                    try {
+                        const destinationMagasin = magasins.find(m => m.id.toString() === destinationMagasinId);
+                        const sacsATransferer = nombreSacs || item.nombreSacs;
 
-                    console.log(`Sortie confirmée pour le lot: ${item.numeroLot} avec les données:`, data);
+                        const poidsNetTransfert = transfertMode === 'partiel' && nombreSacs ? (item.poidsNet / item.nombreSacs) * nombreSacs : item.poidsNet;
+                        const poidsBrutTransfert = transfertMode === 'partiel' && nombreSacs ? (item.poidsBrut / item.nombreSacs) * nombreSacs : item.poidsBrut;
+                        const tareSacsTransfert = transfertMode === 'partiel' && nombreSacs ? (item.tareSacs / item.nombreSacs) * nombreSacs : item.tareSacs;
 
-                    // Étape 4: Appeler la fonction de rappel pour mettre à jour la liste
-                    onValider(item.id);
+                        const payload: AddMouvementPayload = {
+                            magasinID: destinationMagasin?.id || 0,
+                            magasinNom: destinationMagasin ? destinationMagasin.designation : 'Export',
+                            campagneID: item.campagneID,
+                            exportateurID: item.exportateurID,
+                            exportateurNom: item.exportateurNom,
+                            mouvementTypeID: 2, // 'Sortie'
+                            mouvementTypeDesignation: 'Sortie',
+                            certificationID: item.certificationID,
+                            certificationDesignation: item.certificationDesignation,
+                            siteID: destinationMagasin?.siteID || 0,
+                            siteNom: destinationMagasin?.siteNom || 'N/A',
+                            reference1: item.numeroLot,
+                            dateMouvement: new Date().toISOString(),
+                            sens: -1, // Sortie
+                            quantite: sacsATransferer,
+                            poidsBrut: poidsBrutTransfert,
+                            tareSacs: tareSacsTransfert,
+                            tarePalettes: item.tarePalettes, // Assuming whole palettes are transferred
+                            poidsNetLivre: poidsNetTransfert,
+                            retentionPoids: 0,
+                            poidsNetAccepte: poidsNetTransfert,
+                            creationUtilisateur: user?.username || 'user',
+                        };
 
-                    // Étape 5: Revenir à l'écran de la liste
-                    navigation.goBack();
+                        await apiService.addMouvement(payload);
+
+                        // Étape 4: Appeler la fonction de rappel pour mettre à jour la liste
+                        onValider(item.id);
+
+                        // Étape 5: Revenir à l'écran de la liste
+                        navigation.goBack();
+                    } catch (error) {
+                        console.error("Erreur lors de l'ajout du mouvement de stock:", error);
+                        Alert.alert("Erreur", "Une erreur est survenue lors de l'enregistrement du mouvement.");
+                    }
                 }
             }
         ]

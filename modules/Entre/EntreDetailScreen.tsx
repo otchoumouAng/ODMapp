@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, Button, Alert, TextInput, ScrollView, StyleSheet } from 'react-native';
 import { Lot } from './type';
+import { Magasin } from '../Shared/type';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import * as apiService from '../Shared/route';
+import { AddMouvementPayload } from '../Shared/route';
+import { AuthContext } from '../../contexts/AuthContext';
 
 const ReadOnlyField = ({ label, value }: { label: string, value: string | number | null | undefined }) => (
     <View style={localStyles.fieldContainer}>
@@ -19,13 +23,28 @@ const ReadOnlyField = ({ label, value }: { label: string, value: string | number
 const EntreDetailScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const { user } = useContext(AuthContext);
   // On récupère le lot ET la fonction de rappel 'onValider'
   const { item, onValider } = route.params as { item: Lot; onValider: (id: string) => void };
 
+  const [magasins, setMagasins] = useState<Magasin[]>([]);
   const [nombreSacs, setNombreSacs] = useState('');
   const [tracteur, setTracteur] = useState('');
   const [remorque, setRemorque] = useState('');
   const [commentaire, setCommentaire] = useState('');
+
+  useEffect(() => {
+    const loadMagasins = async () => {
+      try {
+        const data = await apiService.getMagasins();
+        setMagasins(data);
+      } catch (error) {
+        console.error("Failed to load magasins", error);
+        Alert.alert("Erreur", "Impossible de charger la liste des magasins.");
+      }
+    };
+    loadMagasins();
+  }, []);
 
   const handleValiderEntree = () => {
     // Étape 1: Afficher la confirmation
@@ -41,21 +60,46 @@ const EntreDetailScreen = () => {
             // Bouton pour confirmer
             {
                 text: "Confirmer",
-                onPress: () => {
-                    // Étape 2: Logique de validation après confirmation
-                    const entreeData = {
-                        lotId: item.id,
-                        tracteur,
-                        remorque,
-                        commentaire,
-                    };
-                    console.log("Validation confirmée:", entreeData);
+                onPress: async () => {
+                    try {
+                        const magasin = magasins.find(m => m.designation === item.magasinReceptionNom);
 
-                    // Étape 3: Appeler la fonction de rappel pour mettre à jour la liste
-                    onValider(item.id);
+                        const payload: AddMouvementPayload = {
+                            magasinID: magasin?.id || 0,
+                            magasinNom: item.magasinReceptionNom || 'N/A',
+                            campagneID: item.campagneID,
+                            exportateurID: item.exportateurID,
+                            exportateurNom: item.exportateurNom,
+                            mouvementTypeID: 1, // 'Entrée'
+                            mouvementTypeDesignation: 'Entrée',
+                            certificationID: item.certificationID,
+                            certificationDesignation: item.certificationDesignation,
+                            siteID: magasin?.siteID || 0,
+                            siteNom: item.siteNom || 'N/A',
+                            reference1: item.numeroLot,
+                            dateMouvement: new Date().toISOString(),
+                            sens: 1, // Entrée
+                            quantite: item.nombreSacs,
+                            poidsBrut: item.poidsBrut,
+                            tareSacs: item.tareSacs,
+                            tarePalettes: item.tarePalettes,
+                            poidsNetLivre: item.poidsNet,
+                            retentionPoids: 0,
+                            poidsNetAccepte: item.poidsNet,
+                            creationUtilisateur: user?.username || 'user',
+                        };
 
-                    // Étape 4: Naviguer en arrière
-                    navigation.goBack();
+                        await apiService.addMouvement(payload);
+
+                        // Étape 3: Appeler la fonction de rappel pour mettre à jour la liste
+                        onValider(item.id);
+
+                        // Étape 4: Naviguer en arrière
+                        navigation.goBack();
+                    } catch (error) {
+                        console.error("Erreur lors de l'ajout du mouvement de stock:", error);
+                        Alert.alert("Erreur", "Une erreur est survenue lors de l'enregistrement du mouvement.");
+                    }
                 }
             }
         ]
