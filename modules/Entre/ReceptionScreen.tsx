@@ -7,6 +7,8 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { TransfertLot } from '../Shared/type';
 import { ReceptionData } from './type';
 import { validerReception } from './routes';
+import { createMouvementStock } from '../MouvementStock/routes';
+import { MouvementStock } from '../MouvementStock/type';
 
 const InfoRow = ({ label, value }: { label: string, value: any }) => (
     <View style={localStyles.infoRow}><Text style={localStyles.infoLabel}>{label}</Text><Text style={localStyles.infoValue}>{value ?? 'N/A'}</Text></View>
@@ -62,6 +64,23 @@ const ReceptionScreen = () => {
 
         try {
             await validerReception(item.id, receptionData);
+
+            const mouvementData: Partial<MouvementStock> = {
+                magasinID: user.magasinID,
+                mouvementTypeID: 2, // Entrée
+                objetEnStockType: 1, // Lot
+                reference1: item.numeroLot,
+                dateMouvement: new Date().toISOString(),
+                sens: 1,
+                quantite: parseInt(nombreSacs, 10),
+                poidsBrut: parseFloat(poidsBrut),
+                poidsNetLivre: parseFloat(poidsNet),
+                creationUtilisateur: user.name,
+                // Le backend devrait remplir les autres champs comme les noms, etc.
+            };
+
+            await createMouvementStock(mouvementData);
+
             Toast.show({ type: 'success', text1: 'Succès', text2: `Le lot ${item.numeroLot} a été réceptionné.` });
             navigation.goBack();
         } catch (error: any) {

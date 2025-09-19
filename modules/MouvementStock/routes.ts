@@ -14,3 +14,16 @@ export const getMouvements = async (params: URLSearchParams): Promise<MouvementS
     throw handleNetworkError(error, 'getMouvements');
   }
 };
+
+/**
+ * Crée un nouveau mouvement de stock.
+ * @param mouvementData L'objet contenant les données du mouvement à créer.
+ */
+export const createMouvementStock = async (mouvementData: Partial<MouvementStock>): Promise<any> => {
+    try {
+        const response = await api.post('/mouvementstock', mouvementData);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error, 'createMouvementStock');
+    }
+};

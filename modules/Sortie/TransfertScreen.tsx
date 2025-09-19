@@ -5,6 +5,8 @@ import Toast from 'react-native-toast-message';
 import { Magasin } from './type';
 import { getMagasins } from '../Shared/route';
 import { createTransfert } from './routes';
+import { createMouvementStock } from '../MouvementStock/routes';
+import { MouvementStock } from '../MouvementStock/type';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -103,7 +105,24 @@ const TransfertScreen = () => {
         };
 
         try {
-            await createTransfert(transfertData);
+            const transfertResponse = await createTransfert(transfertData);
+
+            const mouvementData: Partial<MouvementStock> = {
+                magasinID: user.magasinID,
+                mouvementTypeID: 1, // Sortie
+                objetEnStockType: 1, // Lot
+                reference1: item.reference,
+                dateMouvement: new Date().toISOString(),
+                sens: -1,
+                quantite: nombreSacs ?? 0,
+                poidsBrut: item.poidsBrut ?? 0,
+                poidsNetLivre: item.poidsNetAccepte ?? 0,
+                creationUtilisateur: user.name,
+                // Le backend devrait remplir les autres champs comme les noms, etc.
+            };
+
+            await createMouvementStock(mouvementData);
+
             Toast.show({ type: 'success', text1: 'Opération réussie', text2: `La sortie du lot ${item.reference} a été validée.` });
             navigation.goBack();
         } catch (error: any) {
