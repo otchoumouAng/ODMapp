@@ -21,6 +21,7 @@ const MouvementStockScreen = () => {
   const [filters, setFilters] = useState<MouvementStockFilters>({
     dateDebut: getTodayDateString(),
     dateFin: getTodayDateString(),
+    campagneID: '',
   });
   const [selectedItem, setSelectedItem] = useState<MouvementStock | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -37,7 +38,7 @@ const MouvementStockScreen = () => {
     }, { totalEntreeLots: 0, totalEntreePoidsNet: 0, totalSortiePoidsNet: 0 });
   }, [mouvements]);
 
-  const fetchMouvements = useCallback(async () => {
+  /*const fetchMouvements = useCallback(async () => {
     setLoading(true);
     try {
       // Construction dynamique des paramètres de la requête
@@ -62,7 +63,61 @@ const MouvementStockScreen = () => {
     } finally {
       setLoading(false);
     }
+  }, [filters]);*/
+
+  /*const fetchMouvements = useCallback(async () => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Toujours inclure campagneID, même si vide
+      queryParams.append('campagneID', filters.campagneID || '');
+      
+      if (filters.dateDebut) queryParams.append('datedebut', filters.dateDebut);
+      if (filters.dateFin) queryParams.append('datefin', filters.dateFin);
+      if (filters.siteID) queryParams.append('siteID', filters.siteID);
+      if (filters.exportateurID) queryParams.append('exportateurID', filters.exportateurID);
+      if (filters.mouvementTypeID) queryParams.append('mouvementTypeID', filters.mouvementTypeID);
+      if (filters.sens) queryParams.append('sens', filters.sens);
+
+      const data = await mouvementApiService.getMouvements(queryParams);
+      setMouvements(data);
+    } catch (error) {
+      console.error("Failed to fetch stock movements:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);*/
+
+
+  const fetchMouvements = useCallback(async () => {
+    setLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      
+      // Ajoutez tous les paramètres avec les noms exacts attendus par le backend
+      if (filters.dateDebut) queryParams.append('DateDebut', filters.dateDebut);
+      if (filters.dateFin) queryParams.append('DateFin', filters.dateFin);
+      if (filters.siteID) queryParams.append('SiteID', filters.siteID);
+      if (filters.exportateurID) queryParams.append('ExportateurID', filters.exportateurID);
+      if (filters.campagneID) queryParams.append('CampagneID', filters.campagneID || '');
+      if (filters.mouvementTypeID) queryParams.append('MouvementTypeID', filters.mouvementTypeID);
+      if (filters.sens) queryParams.append('Sens', filters.sens);
+      if (filters.magasinID) queryParams.append('MagasinID', filters.magasinID);
+
+      // DEBUG: Afficher les paramètres envoyés
+      console.log('Paramètres de requête:', Object.fromEntries(queryParams.entries()));
+
+      const data = await mouvementApiService.getMouvements(queryParams);
+      setMouvements(data);
+    } catch (error) {
+      console.error("Failed to fetch stock movements:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [filters]);
+
+
 
   useEffect(() => {
     fetchMouvements();
@@ -76,6 +131,7 @@ const MouvementStockScreen = () => {
     setFilters({
       dateDebut: getTodayDateString(),
       dateFin: getTodayDateString(),
+      campagneID: ''
     });
   }
 

@@ -69,14 +69,13 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
   };
 
   const renderPicker = (label: string, selectedValue: any, onValueChange: (value: any) => void, items: any[], labelKey: string, valueKey: string) => (
-    <View style={Styles.filterPickerContainer}>
+    <View style={[Styles.filterPickerContainer, { marginTop: 40 }]}>
         <Text style={Styles.filterPickerLabel}>{label}</Text>
         <Picker
             selectedValue={selectedValue}
             onValueChange={onValueChange}
             style={Styles.filterPicker}
-            mode="dropdown"
-        >
+            mode="dropdown">
             <Picker.Item label={`-- Tous les ${label.toLowerCase()} --`} value="" />
             {items.map(item => (
                 <Picker.Item key={item[valueKey]} label={item[labelKey]} value={item[valueKey].toString()} />
