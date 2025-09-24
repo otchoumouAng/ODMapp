@@ -109,6 +109,7 @@ const TransfertScreen = () => {
 
             const mouvementData: Partial<MouvementStock> = {
                 magasinID: user.magasinID,
+                siteID: user.locationID, // CORRECTION : Ajout du SiteID depuis l'utilisateur (via locationID)
                 mouvementTypeID: 1, // Sortie
                 objetEnStockType: 1, // Lot
                 reference1: item.reference,

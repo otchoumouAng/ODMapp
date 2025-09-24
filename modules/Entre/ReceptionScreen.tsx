@@ -33,8 +33,8 @@ const ReceptionScreen = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleValidation = async () => {
-        if (!user || !user.magasinID || !user.name) {
-            Alert.alert("Erreur", "Utilisateur non authentifié.");
+        if (!user || !user.magasinID || !user.locationID || !user.name) {
+            Alert.alert("Erreur", "Données utilisateur incomplètes (magasin ou site manquant).");
             return;
         }
         if (!numBordereau) {
@@ -67,6 +67,7 @@ const ReceptionScreen = () => {
 
             const mouvementData: Partial<MouvementStock> = {
                 magasinID: user.magasinID,
+                siteID: user.locationID, // CORRECTION : Utilisation de locationID, qui est la bonne propriété
                 mouvementTypeID: 2, // Entrée
                 objetEnStockType: 1, // Lot
                 reference1: item.numeroLot,
