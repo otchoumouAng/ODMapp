@@ -69,17 +69,6 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
     setFilters(newFilters);
   };
 
-/*  const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate && datePickerTarget) {
-      handleValueChange(datePickerTarget, selectedDate.toISOString().split('T')[0]);
-    }
-  };
-
-  const showPickerFor = (target: 'dateDebut' | 'dateFin') => {
-    setDatePickerTarget(target);
-    setShowDatePicker(true);
-  };*/
 
   const handleApplyFilters = () => { onFilterChange(filters); setIsExpanded(false); };
   const handleResetFilters = () => { setFilters({}); onReset(); };

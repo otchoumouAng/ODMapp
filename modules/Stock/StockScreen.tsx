@@ -44,27 +44,6 @@ const StockScreen = () => {
     setFilters(defaultFilters);
   }, [defaultFilters]);
 
-/*  useEffect(() => {
-    const fetchLots = async () => {
-      if (Object.keys(filters).length === 0 && Object.keys(defaultFilters).length === 0) {
-        setStockLots([]);
-        setLoading(false);
-        return;
-      }
-      
-      setLoading(true);
-      try {
-        const data = await getStockLots(filters);
-        setStockLots(data);
-      } catch (error) {
-        console.error("Failed to fetch lots in stock:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchLots();
-  }, [filters]);*/
 
   useEffect(() => {
   const fetchLots = async () => {
