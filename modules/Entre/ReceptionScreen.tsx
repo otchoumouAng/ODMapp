@@ -66,21 +66,32 @@ const ReceptionScreen = () => {
             await validerReception(item.id, receptionData);
 
             const mouvementData: Partial<MouvementStock> = {
-                magasinID: user.magasinID,
-                siteID: user.locationID, // CORRECTION : Utilisation de locationID, qui est la bonne propriété
-                mouvementTypeID: 2, // Entrée
-                objetEnStockType: 1, // Lot
-                reference1: item.numeroLot,
-                dateMouvement: new Date().toISOString(),
-                sens: 1,
-                quantite: parseInt(nombreSacs, 10),
-                poidsBrut: parseFloat(poidsBrut),
-                poidsNetLivre: parseFloat(poidsNet),
-                creationUtilisateur: user.name,
+                magasinId: user.magasinID,
                 campagneID: item.campagneID || "2023/2024",
-                commentaire: commentaire,
-                reference2: numBordereau,
+                exportateurId: item.exportateurID,
+                certificationId: item.certificationID,
+                datemouvement: new Date().toISOString(),
+                sens: 1,
+                mouvementTypeId: 2, // Entrée
+                objectEnStockID: item.lotID,
+                objectEnStockType: 1, // Lot
+                quantite: parseInt(nombreSacs, 10),
                 statut: 'VALID',
+                reference1: item.numeroLot,
+                reference2: numBordereau,
+                poidsbrut: parseFloat(poidsBrut),
+                tarebags: parseFloat(poidsBrut) - parseFloat(poidsNet),
+                tarepalette: 0,
+                poidsnetlivre: parseFloat(poidsNet),
+                retention: 0,
+                poidsnetaccepte: parseFloat(poidsNet),
+                CreationUser: user.name,
+                EmplacementID: 1, // As per requirement
+                sactypeId: item.sacTypeID,
+                commentaire: commentaire,
+                SiteID: user.locationID,
+                produitID: item.produitID,
+                lotID: item.lotID,
             };
 
             await createMouvementStock(mouvementData);

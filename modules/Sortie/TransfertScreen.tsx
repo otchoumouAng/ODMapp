@@ -80,51 +80,57 @@ const TransfertScreen = () => {
 
         const transfertData = {
             LotID: item.lotID,
-            NumeroLot: item.reference,
-            CampagneID: item.campagneID || "2023/2024",
-            SiteID: user.locationID,
-            MagasinExpeditionID: user.magasinID,
-            MagReceptionTheoID:1000,
-            MagasinReceptionID: parseInt(destinationMagasinId, 10),
-            NombreSacsExpedition: nombreSacs ?? 0,
-            PoidsBrutExpedition: item.poidsBrut,
-            PoidsNetExpedition: item.poidsNetAccepte,
-            TareSacsExpedition: (item.poidsBrut ?? 0) - (item.poidsNetAccepte ?? 0),
-            TarePaletteExpedition: 0,
-            ImmTracteurExpedition: tracteur,
-            ImmRemorqueExpedition: remorque,
-            DateExpedition: new Date().toISOString(),
-            CreationUtilisateur: user.name,
-
-            // #################### AJOUT DES CHAMPS DANS L'ENVOI ####################
-            Statut: "NA", 
-            CommentaireExpedition: commentaire,
+            campagneID: item.campagneID || "2023/2024",
+            siteID: user.locationID,
             NumBordereauExpedition: numBordereau,
-            ModeTransfertID: transfertMode === 'total' ? 1 : 2,
-            TypeOperationID: operationType === 'transfert' ? 1 : 2,
-            // #######################################################################
+            magasinExpeditionID: user.magasinID,
+            modeTransfertID: transfertMode === 'total' ? 1 : 2,
+            typeOperationID: operationType === 'transfert' ? 1 : 2,
+            nombreSacs: nombreSacs ?? 0,
+            NombrePalette: 0, // Assuming 0 for now
+            TareSac: (item.poidsBrut ?? 0) - (item.poidsNetAccepte ?? 0),
+            TarePalette: 0, // Assuming 0 for now
+            poidsBrut: item.poidsBrut,
+            poidsNet: item.poidsNetAccepte,
+            ImmTracteur: tracteur,
+            ImmRemorque: remorque,
+            dateExpedition: new Date().toISOString(),
+            Commentaire: commentaire,
+            statut: "NA",
+            magasinTheoReceptionID: parseInt(destinationMagasinId, 10),
+            CreationUser: user.name,
         };
 
         try {
             const transfertResponse = await createTransfert(transfertData);
 
             const mouvementData: Partial<MouvementStock> = {
-                magasinID: user.magasinID,
-                siteID: user.locationID, // CORRECTION : Ajout du SiteID depuis l'utilisateur (via locationID)
-                mouvementTypeID: 1, // Sortie
-                objetEnStockType: 2, // Lot
-                lotID: item.lotID,
-                reference1: item.reference,
-                dateMouvement: new Date().toISOString(),
-                sens: -1,
-                quantite: nombreSacs ?? 0,
-                poidsBrut: item.poidsBrut ?? 0,
-                poidsNetLivre: item.poidsNetAccepte ?? 0,
-                creationUtilisateur: user.name,
+                magasinId: user.magasinID,
                 campagneID: item.campagneID || "2023/2024",
-                commentaire: commentaire,
-                reference2: numBordereau,
+                exportateurId: item.exportateurID,
+                certificationId: item.certificationID,
+                datemouvement: new Date().toISOString(),
+                sens: -1,
+                mouvementTypeId: 1, // Sortie
+                objectEnStockID: item.lotID,
+                objectEnStockType: 2, // Lot
+                quantite: nombreSacs ?? 0,
                 statut: 'AP',
+                reference1: item.reference,
+                reference2: numBordereau,
+                poidsbrut: item.poidsBrut ?? 0,
+                tarebags: (item.poidsBrut ?? 0) - (item.poidsNetAccepte ?? 0),
+                tarepalette: 0,
+                poidsnetlivre: item.poidsNetAccepte ?? 0,
+                retention: 0, // Assuming 0 for now
+                poidsnetaccepte: item.poidsNetAccepte ?? 0,
+                CreationUser: user.name,
+                EmplacementID: 1, // As per requirement
+                sactypeId: item.sacTypeID,
+                commentaire: commentaire,
+                SiteID: user.locationID,
+                produitID: item.produitID,
+                lotID: item.lotID,
             };
 
             await createMouvementStock(mouvementData);
