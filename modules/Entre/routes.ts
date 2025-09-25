@@ -9,10 +9,9 @@ import { ReceptionData } from './type';
 export const getLotsARecevoir = async (magasinId: number): Promise<TransfertLot[]> => {
     try {
         const params = new URLSearchParams();
-        params.append('statut', 'TR'); // 'TR' pour En Transit
-        params.append('magasinReceptionId', magasinId.toString());
+        params.append('magasinId', magasinId.toString());
         
-        const response = await api.get('/transfertlot', { params });
+        const response = await api.get('/transfertlot/entransit', { params });
         return response.data;
     } catch (error) {
         throw handleNetworkError(error);
