@@ -84,7 +84,8 @@ const TransfertScreen = () => {
             CampagneID: item.campagneID || "2023/2024",
             SiteID: user.locationID,
             MagasinExpeditionID: user.magasinID,
-            MagReceptionTheoID: operationType === 'transfert' ? parseInt(destinationMagasinId, 10) : undefined,
+            MagReceptionTheoID:1000,
+            MagasinReceptionID: parseInt(destinationMagasinId, 10),
             NombreSacsExpedition: nombreSacs ?? 0,
             PoidsBrutExpedition: item.poidsBrut,
             PoidsNetExpedition: item.poidsNetAccepte,
@@ -96,7 +97,7 @@ const TransfertScreen = () => {
             CreationUtilisateur: user.name,
 
             // #################### AJOUT DES CHAMPS DANS L'ENVOI ####################
-            Statut: "PE", // "PE" pour "En Préparation" ou "AP" pour "Approuvé", à adapter
+            Statut: "NA", 
             CommentaireExpedition: commentaire,
             NumBordereauExpedition: numBordereau,
             ModeTransfertID: transfertMode === 'total' ? 1 : 2,
@@ -111,7 +112,8 @@ const TransfertScreen = () => {
                 magasinID: user.magasinID,
                 siteID: user.locationID, // CORRECTION : Ajout du SiteID depuis l'utilisateur (via locationID)
                 mouvementTypeID: 1, // Sortie
-                objetEnStockType: 1, // Lot
+                objetEnStockType: 2, // Lot
+                lotID: item.lotID,
                 reference1: item.reference,
                 dateMouvement: new Date().toISOString(),
                 sens: -1,
@@ -122,7 +124,7 @@ const TransfertScreen = () => {
                 campagneID: item.campagneID || "2023/2024",
                 commentaire: commentaire,
                 reference2: numBordereau,
-                statut: 'VALID',
+                statut: 'AP',
             };
 
             await createMouvementStock(mouvementData);
