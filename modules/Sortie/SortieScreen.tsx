@@ -56,7 +56,7 @@ const SortieScreen = () => {
   };
 
   const handleFilterChange = (newFilters: LotFilters) => {
-    setFilters(newFilters);
+    setFilters({ ...defaultFilters, ...newFilters });
   };
 
   const handleResetFilters = () => {
