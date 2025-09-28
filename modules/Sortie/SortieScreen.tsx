@@ -69,7 +69,11 @@ const SortieScreen = () => {
 
   return (
     <View style={[Styles.container, { backgroundColor: Colors.lightGray }]}>
-      <Filtre onFilterChange={handleFilterChange} onReset={handleResetFilters} />
+      <Filtre
+        activeFilters={filters}
+        onFilterChange={handleFilterChange}
+        onReset={handleResetFilters}
+      />
       <FlatList
         data={lots}
         renderItem={({ item }) => (

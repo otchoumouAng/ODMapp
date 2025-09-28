@@ -22,23 +22,29 @@ export interface LotFilters {
 }
 
 interface FiltreProps {
+  activeFilters: LotFilters; // ## NOUVELLE PROP ##
   onFilterChange: (filters: LotFilters) => void;
   onReset: () => void;
   showDateFilters?: boolean;
   showSiteFilter?: boolean;
-  // ## NOUVELLE PROP ## : Contrôle le mode d'affichage des dates
-  dateMode?: 'range' | 'single'; 
+  dateMode?: 'range' | 'single';
 }
 
-const Filtre: React.FC<FiltreProps> = ({ 
-  onFilterChange, 
-  onReset, 
+const Filtre: React.FC<FiltreProps> = ({
+  activeFilters, // Destructurer la nouvelle prop
+  onFilterChange,
+  onReset,
   showDateFilters = true,
   showSiteFilter = true,
-  // Valeur par défaut à 'range' pour la rétrocompatibilité
   dateMode = 'range'
 }) => {
-  const [filters, setFilters] = useState<LotFilters>({});
+  // L'état interne est maintenant initialisé et synchronisé avec les props
+  const [filters, setFilters] = useState<LotFilters>(activeFilters);
+
+  // ## NOUVEAU HOOK ## : Synchronise l'état interne si les filtres actifs changent
+  useEffect(() => {
+    setFilters(activeFilters);
+  }, [activeFilters]);
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
