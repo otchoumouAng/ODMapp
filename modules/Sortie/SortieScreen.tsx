@@ -30,26 +30,28 @@ const SortieScreen = () => {
     setFilters(defaultFilters);
   }, [defaultFilters]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      const fetchLots = async () => {
-        if (Object.keys(filters).length === 0) {
-            setLots([]);
-            return;
-        }
-        setLoading(true);
-        try {
-          const data = await getStockLots(filters);
-          setLots(data);
-        } catch (error) {
-          console.error("Failed to load lots for sortie:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchLots();
-    }, [filters])
-  );
+  useEffect(() => {
+    const fetchLots = async () => {
+      if (!filters.magasinID) {
+        setLots([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      console.log("Recherche de lots avec les filtres :", filters);
+      try {
+        const data = await getStockLots(filters);
+        setLots(data);
+      } catch (error) {
+        console.error("Failed to load lots for sortie:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLots();
+  }, [filters]);
   
   const handleCardPress = (item: StockLot) => {
     navigation.navigate('Transfert', { item });
