@@ -32,75 +32,119 @@ const ReceptionScreen = () => {
     
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Fichier : modules/Entre/ReceptionScreen.tsx
+
     const handleValidation = async () => {
+        // --- 1. VALIDATION INITIALE DU FORMULAIRE ---
         if (!user || !user.magasinID || !user.locationID || !user.name) {
-            Alert.alert("Erreur", "Données utilisateur incomplètes (magasin ou site manquant).");
+            Alert.alert("Erreur d'utilisateur", "Vos informations utilisateur sont incomplètes. Impossible de continuer.");
             return;
         }
-        if (!numBordereau) {
-            Alert.alert("Validation", "Le numéro de bordereau de réception est obligatoire.");
+        if (!numBordereau.trim()) {
+            Alert.alert("Champ requis", "Le numéro de bordereau de réception est obligatoire.");
             return;
         }
 
         setIsSubmitting(true);
 
+        // --- 2. CONSTRUCTION DE L'OBJET 'receptionData' ---
         const receptionData: ReceptionData = {
             dateReception: new Date().toISOString(),
             destinationID: user.magasinID,
             modificationUser: user.name,
-            numBordereauRec: numBordereau,
-            immTracteurRec: tracteur,
-            immRemorqueRec: remorque,
-            commentaireRec: commentaire,
-            nombreSac: parseInt(nombreSacs, 10),
-            nombrePalette: parseInt(nombrePalettes, 10),
-            poidsBrut: parseFloat(poidsBrut),
-            poidsNetRecu: parseFloat(poidsNet),
-            tareSacRecu: parseFloat(poidsBrut) - parseFloat(poidsNet),
-            tarePaletteArrive: 0, // A ajuster si nécessaire
-            statut: 'RE',
+            numBordereauRec: numBordereau.trim(),
+            immTracteurRec: tracteur.trim(),
+            immRemorqueRec: remorque.trim(),
+            commentaireRec: commentaire.trim(),
+            nombreSac: parseInt(nombreSacs, 10) || 0,
+            nombrePalette: parseInt(nombrePalettes, 10) || 0,
+            poidsBrut: parseFloat(poidsBrut) || 0,
+            poidsNetRecu: parseFloat(poidsNet) || 0,
+            tareSacRecu: (parseFloat(poidsBrut) || 0) - (parseFloat(poidsNet) || 0),
+            tarePaletteArrive: 0, 
+            statut: 'RE', // Statut 'Reçu'
             rowVersionKey: item.rowVersionKey,
         };
 
+        // --- 3. JOURNALISATION (LOG) POUR LE DÉBOGAGE ---
+        console.log('--- CONTEXTE DE DÉBOGAGE POUR LA RÉCEPTION ---');
+        console.log(`Lot N°: ${item.numeroLot} (ID du Transfert: ${item.id})`);
+        console.log(`Magasin Expéditeur (Original): ${item.magasinExpeditionID}`);
+        console.log(`Magasin de Destination (Envoyé): ${receptionData.destinationID}`);
+        console.log('-------------------------------------------------');
+        console.log('>> 1. Données envoyées à validerReception :', JSON.stringify(receptionData, null, 2));
+
+        // --- 4. EXÉCUTION DES APPELS API ---
         try {
+            // --- BLOC 1 : Tentative de validation de la réception ---
             await validerReception(item.id, receptionData);
 
-            const mouvementData: Partial<MouvementStock> = {
-                magasinId: user.magasinID,
-                campagneID: item.campagneID || "2023/2024",
-                exportateurId: item.exportateurID,
-                certificationId: item.certificationID,
-                datemouvement: new Date().toISOString(),
-                sens: 1,
-                mouvementTypeId: 2, // Entrée
-                objectEnStockID: item.lotID,
-                objectEnStockType: 1, // Lot
-                quantite: parseInt(nombreSacs, 10),
-                statut: 'VALID',
-                reference1: item.numeroLot,
-                reference2: numBordereau,
-                poidsbrut: parseFloat(poidsBrut),
-                tarebags: parseFloat(poidsBrut) - parseFloat(poidsNet),
-                tarepalette: 0,
-                poidsnetlivre: parseFloat(poidsNet),
-                retention: 0,
-                poidsnetaccepte: parseFloat(poidsNet),
-                CreationUser: user.name,
-                EmplacementID: 1, // As per requirement
-                sactypeId: item.sacTypeID,
-                commentaire: commentaire,
-                SiteID: user.locationID,
-                produitID: item.produitID,
-                lotID: item.lotID,
-            };
+            // Si la réception réussit, on tente de créer le mouvement de stock.
+            try {
+                // --- BLOC 2 : Tentative de création du mouvement de stock ---
+                const mouvementData: Partial<MouvementStock> = {
+                    magasinId: user.magasinID,
+                    campagneID: item.campagneID,
+                    exportateurId: item.exportateurID,
+                    certificationId: item.certificationID,
+                    datemouvement: new Date().toISOString(),
+                    sens: 1, // Entrée
+                    mouvementTypeId: 31, // Type: Entrée de lot
+                    objectEnStockID: item.lotID,
+                    objectEnStockType: 1, // Type: Lot
+                    quantite: receptionData.nombreSac,
+                    statut: 'AP',
+                    reference1: item.numeroLot,
+                    reference2: receptionData.numBordereauRec,
+                    poidsbrut: receptionData.poidsBrut,
+                    tarebags: receptionData.tareSacRecu,
+                    tarepalette: receptionData.tarePaletteArrive,
+                    poidsnetlivre: receptionData.poidsNetRecu,
+                    retention: 0,
+                    poidsnetaccepte: receptionData.poidsNetRecu,
+                    CreationUtilisateur: user.name,
+                    EmplacementID: 1, 
+                    sactypeId: item.sacTypeID,
+                    commentaire: receptionData.commentaireRec,
+                    SiteID: user.locationID,
+                    produitID: item.produitID,
+                    lotID: item.lotID,
+                };
 
-            await createMouvementStock(mouvementData);
+                console.log('>> 2. Données envoyées à createMouvementStock :', JSON.stringify(mouvementData, null, 2));
+                
+                await createMouvementStock(mouvementData);
 
-            Toast.show({ type: 'success', text1: 'Succès', text2: `Le lot ${item.numeroLot} a été réceptionné.` });
-            navigation.goBack();
-        } catch (error: any) {
-            Alert.alert("Échec de l'opération", error.message);
+                // SUCCÈS : Les deux opérations ont réussi.
+                Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${item.numeroLot} est entré en stock.` });
+                navigation.goBack();
+
+            } catch (stockError: any) {
+                // ÉCHEC CRITIQUE : La réception a réussi, mais le mouvement a échoué.
+                Alert.alert(
+                    "ERREUR CRITIQUE",
+                    `Le lot a été validé en réception, mais son entrée en stock a échoué.\n\nVeuillez contacter le support technique pour une correction manuelle.`
+                );
+                navigation.goBack();
+            }
+
+        } catch (receptionError: any) {
+            // GESTION AMÉLIORÉE DES ERREURS DE RÉCEPTION
+            const errorMessage = receptionError.message || '';
+
+            if (errorMessage.includes('Prière vérifier le magasin de reception')) {
+                // Cas 1 : Erreur spécifique de magasin identique
+                Alert.alert(
+                    "Action Impossible",
+                    "Ce lot ne peut pas être réceptionné dans ce magasin car c'est son point d'expédition d'origine."
+                );
+            } else {
+                // Cas 2 : Toutes les autres erreurs de réception
+                Alert.alert("Échec de la Réception", errorMessage);
+            }
+            
         } finally {
+            // Quoi qu'il arrive, on réactive le bouton de soumission.
             setIsSubmitting(false);
         }
     };

@@ -37,7 +37,7 @@ const EntreeScreen = () => {
     );
 
     const handleCardPress = (item: TransfertLot) => {
-        navigation.navigate('Reception', { item });
+        navigation.navigate('ReceptionScreen', { item });
     };
 
     if (loading) {

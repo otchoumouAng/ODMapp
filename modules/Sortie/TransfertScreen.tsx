@@ -5,8 +5,6 @@ import Toast from 'react-native-toast-message';
 import { Magasin } from './type';
 import { getMagasins } from '../Shared/route';
 import { createTransfert } from './routes';
-import { createMouvementStock } from '../MouvementStock/routes';
-import { MouvementStock } from '../MouvementStock/type';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
@@ -25,7 +23,7 @@ const TransfertScreen = () => {
     const { user } = useContext(AuthContext);
     const { item } = route.params as { item: StockLot & { lotID: string } };
 
-    const [operationType, setOperationType] = useState<'transfert' | 'export'>('transfert');
+    const [operationType, setOperationType] = useState<'transfert' | 'empotage' | 'export'>('transfert');
     const [transfertMode, setTransfertMode] = useState<'total' | 'partiel'>('total');
     const [destinationMagasinId, setDestinationMagasinId] = useState<string>('');
     const [tracteur, setTracteur] = useState('');
@@ -33,11 +31,8 @@ const TransfertScreen = () => {
     const [nombreSacs, setNombreSacs] = useState<number | undefined>(item.quantite);
     const [magasins, setMagasins] = useState<Magasin[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-    // #################### AJOUT DES CHAMPS REQUIS ####################
     const [numBordereau, setNumBordereau] = useState('');
     const [commentaire, setCommentaire] = useState('');
-    // ##################################################################
 
     useEffect(() => {
         const loadMagasins = async () => {
@@ -54,7 +49,7 @@ const TransfertScreen = () => {
     }, [user]);
 
     const handleTransfert = async () => {
-        // Validation côté client
+        // --- Validations ---
         if (operationType === 'transfert' && !destinationMagasinId) {
             Alert.alert("Validation", "Veuillez sélectionner un magasin de destination.");
             return;
@@ -63,84 +58,57 @@ const TransfertScreen = () => {
             Alert.alert("Validation", "Le numéro du bordereau est obligatoire.");
             return;
         }
-         if (!commentaire.trim()) {
-            Alert.alert("Validation", "Un commentaire est obligatoire pour la sortie.");
-            return;
-        }
         if (!user || !user.magasinID || !user.locationID || !user.name) {
-            Alert.alert("Erreur", "Utilisateur non authentifié.");
+            Alert.alert("Erreur", "Utilisateur non authentifié ou informations manquantes.");
             return;
         }
         if (!item.lotID) {
-            Alert.alert("Erreur Critique", "L'identifiant du lot (GUID) est manquant.");
+            Alert.alert("Erreur Critique", "L'identifiant du lot (GUID) est manquant. Impossible de continuer.");
+            return;
+        }
+        if (item.poidsBrut == null || item.poidsNetAccepte == null) {
+            Alert.alert("Données de lot invalides", "Le poids brut ou le poids net du lot sélectionné sont manquants.");
             return;
         }
 
         setIsSubmitting(true);
 
+        // --- Objet de données final et correct ---
         const transfertData = {
-            LotID: item.lotID,
-            campagneID: item.campagneID || "2023/2024",
+            lotID: item.lotID,
+            campagneID: item.campagneID || "2024/2025",
             siteID: user.locationID,
-            NumBordereauExpedition: numBordereau,
+            numeroLot: item.reference,
+            numBordereauExpedition: numBordereau,
             magasinExpeditionID: user.magasinID,
+            nombreSacsExpedition: nombreSacs ?? 0,
+            nombrePaletteExpedition: 0,
+            tareSacsExpedition: item.poidsBrut - item.poidsNetAccepte,
+            tarePaletteExpedition: 0,
+            poidsBrutExpedition: item.poidsBrut,
+            poidsNetExpedition: item.poidsNetAccepte,
+            immTracteurExpedition: tracteur,
+            immRemorqueExpedition: remorque,
+            dateExpedition: new Date().toISOString(),
+            commentaireExpedition: commentaire,
+            statut: "TR", // Statut "En Transit"
+            magReceptionTheoID: parseInt(destinationMagasinId, 10) || 0,
             modeTransfertID: transfertMode === 'total' ? 1 : 2,
             typeOperationID: operationType === 'transfert' ? 1 : 2,
-            nombreSacs: nombreSacs ?? 0,
-            NombrePalette: 0, // Assuming 0 for now
-            TareSac: (item.poidsBrut ?? 0) - (item.poidsNetAccepte ?? 0),
-            TarePalette: 0, // Assuming 0 for now
-            poidsBrut: item.poidsBrut,
-            poidsNet: item.poidsNetAccepte,
-            ImmTracteur: tracteur,
-            ImmRemorque: remorque,
-            dateExpedition: new Date().toISOString(),
-            Commentaire: commentaire,
-            statut: "NA",
-            magasinTheoReceptionID: parseInt(destinationMagasinId, 10),
-            CreationUser: user.name,
+            creationUtilisateur: user.name,
         };
 
         try {
-            const transfertResponse = await createTransfert(transfertData);
-
-            const mouvementData: Partial<MouvementStock> = {
-                magasinId: user.magasinID,
-                campagneID: item.campagneID || "2023/2024",
-                exportateurId: item.exportateurID,
-                certificationId: item.certificationID,
-                datemouvement: new Date().toISOString(),
-                sens: -1,
-                mouvementTypeId: 1, // Sortie
-                objectEnStockID: item.lotID,
-                objectEnStockType: 2, // Lot
-                quantite: nombreSacs ?? 0,
-                statut: 'AP',
-                reference1: item.reference,
-                reference2: numBordereau,
-                poidsbrut: item.poidsBrut ?? 0,
-                tarebags: (item.poidsBrut ?? 0) - (item.poidsNetAccepte ?? 0),
-                tarepalette: 0,
-                poidsnetlivre: item.poidsNetAccepte ?? 0,
-                retention: 0, // Assuming 0 for now
-                poidsnetaccepte: item.poidsNetAccepte ?? 0,
-                CreationUser: user.name,
-                EmplacementID: 1, // As per requirement
-                sactypeId: item.sacTypeID,
-                commentaire: commentaire,
-                SiteID: user.locationID,
-                produitID: item.produitID,
-                lotID: item.lotID,
-            };
-
-            await createMouvementStock(mouvementData);
+            // --- Un seul appel API qui gère toute la logique ---
+            await createTransfert(transfertData);
 
             Toast.show({ type: 'success', text1: 'Opération réussie', text2: `La sortie du lot ${item.reference} a été validée.` });
             navigation.goBack();
         } catch (error: any) {
-            // Affiche une erreur plus claire pour l'utilisateur
-            const errorMessage = error.response?.data?.message || error.message || "Une erreur est survenue.";
-            Alert.alert("Échec de l'opération", errorMessage);
+            const serverMessage = error.response?.data?.message || error.message;
+            const displayMessage = serverMessage || "Une erreur inattendue est survenue.";
+            console.error("Échec de l'opération de transfert:", JSON.stringify(error, null, 2));
+            Alert.alert("Échec de l'opération", displayMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -163,20 +131,19 @@ const TransfertScreen = () => {
                 <View style={localStyles.sectionContainer}>
                     <Text style={localStyles.sectionTitle}>Détails de l'Opération</Text>
                     
-                    {/* ############### AJOUT DES CHAMPS DANS L'INTERFACE ############### */}
                     <TextInput style={Styles.filterInput} placeholder="Numéro du Bordereau *" value={numBordereau} onChangeText={setNumBordereau} />
                     <TextInput style={Styles.filterInput} placeholder="Commentaire *" value={commentaire} onChangeText={setCommentaire} multiline />
-                    {/* ################################################################### */}
                     
-                    <Picker selectedValue={operationType} onValueChange={itemValue => setOperationType(itemValue)}>
+                    <Picker selectedValue={operationType} onValueChange={(itemValue: 'transfert' | 'empotage' | 'export') => setOperationType(itemValue)}>
                         <Picker.Item label='Transfert inter-magasin' value='transfert' />
+                        <Picker.Item label='Sortie pour empotage' value='empotage' />
                         <Picker.Item label='Sortie pour export' value='export' />
                     </Picker>
-                    <Picker selectedValue={transfertMode} onValueChange={itemValue => setTransfertMode(itemValue)}>
+                    <Picker selectedValue={transfertMode} onValueChange={(itemValue: 'total' | 'partiel') => setTransfertMode(itemValue)}>
                         <Picker.Item label='Total' value='total' />
                         <Picker.Item label='Partiel' value='partiel' />
                     </Picker>
-                    <Picker selectedValue={destinationMagasinId} onValueChange={itemValue => setDestinationMagasinId(itemValue)} enabled={operationType === 'transfert'}>
+                    <Picker selectedValue={destinationMagasinId} onValueChange={(itemValue: string) => setDestinationMagasinId(itemValue)} enabled={operationType === 'transfert' || operationType === 'empotage'}>
                         <Picker.Item label={operationType === 'export' ? "N/A" : "-- Sélectionnez un magasin --"} value="" />
                         {magasins.map(magasin => (
                             <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
@@ -203,7 +170,6 @@ const TransfertScreen = () => {
     );
 };
 
-// ... (les styles restent identiques)
 const localStyles = StyleSheet.create({
     pageContainer: {
         padding: 20,
@@ -256,3 +222,4 @@ const localStyles = StyleSheet.create({
 });
 
 export default TransfertScreen;
+
