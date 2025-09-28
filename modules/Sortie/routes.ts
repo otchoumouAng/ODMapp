@@ -13,20 +13,14 @@ export const getStockLots = async (filters: LotFilters): Promise<StockLot[]> => 
     try {
         const params = new URLSearchParams();
         
-        // Le magasinID est obligatoire et doit toujours être envoyé.
-        if (filters.magasinID) {
-            params.append('magasinID', filters.magasinID);
-        }
-
-        // ## CORRECTION ##
-        // Pour les autres filtres, on les ajoute SEULEMENT s'ils ont une valeur.
-        // Cela évite d'envoyer des paramètres vides (ex: exportateurID='') que le backend interpréterait mal.
-        if (filters.campagneID) {
-            params.append('campagneID', filters.campagneID);
-        }
-        if (filters.exportateurID) {
-            params.append('exportateurID', filters.exportateurID);
-        }
+        // On vérifie et ajoute chaque filtre s'il est présent.
+        if (filters.magasinID) params.append('magasinID', filters.magasinID);
+        if (filters.campagneID) params.append('campagneID', filters.campagneID);
+        if (filters.exportateurID) params.append('exportateurID', filters.exportateurID);
+        if (filters.produitID) params.append('produitID', filters.produitID);
+        if (filters.typeLotID) params.append('typeLotID', filters.typeLotID);
+        if (filters.certificationID) params.append('certificationID', filters.certificationID);
+        if (filters.gradeID) params.append('gradeID', filters.gradeID);
         
         const response = await api.get('/stock/lots', { params });
         return response.data;
