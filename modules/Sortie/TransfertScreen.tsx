@@ -48,6 +48,19 @@ const TransfertScreen = () => {
         loadMagasins();
     }, [user]);
 
+    // --- NOUVEAU HOOK : Gère la logique de destination en fonction du type d'opération ---
+    useEffect(() => {
+        if (operationType === 'empotage') {
+            setDestinationMagasinId('3'); // Valeur pour "Magasin empotage"
+        } else if (operationType === 'export') {
+            setDestinationMagasinId('1000'); // Valeur pour "N/A"
+        } else {
+            // Réinitialiser si l'utilisateur revient à "transfert"
+            setDestinationMagasinId('');
+        }
+    }, [operationType]);
+
+
     const handleTransfert = async () => {
         // --- Validations ---
         if (operationType === 'transfert' && !destinationMagasinId) {
@@ -94,7 +107,7 @@ const TransfertScreen = () => {
             statut: "TR", // Statut "En Transit"
             magReceptionTheoID: parseInt(destinationMagasinId, 10) || 0,
             modeTransfertID: transfertMode === 'total' ? 1 : 2,
-            typeOperationID: operationType === 'transfert' ? 1 : 2,
+            typeOperationID: operationType === 'transfert' ? 1 : (operationType === 'empotage' ? 2 : 3), // Ajustement pour correspondre à l'API
             creationUtilisateur: user.name,
         };
 
@@ -143,12 +156,25 @@ const TransfertScreen = () => {
                         <Picker.Item label='Total' value='total' />
                         <Picker.Item label='Partiel' value='partiel' />
                     </Picker>
-                    <Picker selectedValue={destinationMagasinId} onValueChange={(itemValue: string) => setDestinationMagasinId(itemValue)} enabled={operationType === 'transfert' || operationType === 'empotage'}>
-                        <Picker.Item label={operationType === 'export' ? "N/A" : "-- Sélectionnez un magasin --"} value="" />
-                        {magasins.map(magasin => (
-                            <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
-                        ))}
-                    </Picker>
+                    
+                    {/* --- MODIFICATION : Affichage conditionnel du sélecteur de magasin --- */}
+                    <Text style={localStyles.inputLabel}>Magasin de destination</Text>
+                    {operationType === 'transfert' ? (
+                        <Picker selectedValue={destinationMagasinId} onValueChange={(itemValue: string) => setDestinationMagasinId(itemValue)}>
+                            <Picker.Item label="-- Sélectionnez un magasin --" value="" />
+                            {magasins.map(magasin => (
+                                <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
+                            ))}
+                        </Picker>
+                    ) : (
+                        <TextInput
+                          style={[Styles.filterInput, localStyles.disabledInput, { marginTop: 15, marginBottom: 6}]}
+                          value={operationType === 'empotage' ? "Magasin empotage" : "N/A"}
+                          editable={false}
+                        />
+
+                    )}
+
                     <TextInput style={Styles.filterInput} placeholder="Tracteur" value={tracteur} onChangeText={setTracteur} />
                     <TextInput style={Styles.filterInput} placeholder="Remorque" value={remorque} onChangeText={setRemorque} />
                     <TextInput
@@ -216,10 +242,16 @@ const localStyles = StyleSheet.create({
         fontWeight: '500',
         color: Colors.dark,
     },
+    inputLabel: { // Style ajouté pour le label
+        fontSize: 16,
+        color: Colors.darkGray,
+        marginLeft: 8,
+        marginBottom: -8, // Pour rapprocher le label du champ
+    },
     disabledInput: {
-        backgroundColor: '#e9ecef'
+        backgroundColor: '#e9ecef',
+        color: '#495057', // Couleur de texte pour la lisibilité
     }
 });
 
 export default TransfertScreen;
-
