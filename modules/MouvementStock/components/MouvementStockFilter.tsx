@@ -10,7 +10,7 @@ import { Styles, Colors } from '../../../styles/style';
 export interface MouvementStockFilters {
   dateDebut?: string;
   dateFin?: string;
-  magasinID?: string;
+  magasinID?: string; // On garde le champ ici au cas où, mais on ne l'affiche plus
   exportateurID?: string;
   campagneID?: string;
   mouvementTypeID?: string;
@@ -23,13 +23,14 @@ interface MouvementStockFilterProps {
   onReset: () => void;
 }
 
+// ================= COMPOSANT MODIFIÉ =================
 const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, onValueChange, onReset }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
 
-  const [magasins, setMagasins] = useState<Magasin[]>([]);
+  // Le chargement des magasins n'est plus nécessaire ici
   const [exportateurs, setExportateurs] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [campagnes, setCampagnes] = useState<string[]>([]);
@@ -37,12 +38,13 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
   useEffect(() => {
     const loadDropdownData = async () => {
       try {
-        setMagasins(await apiService.getMagasins());
+        // On ne charge plus les magasins
         setExportateurs(await apiService.getExportateurs());
         setTypes(await apiService.getMouvementStockTypes());
         setCampagnes(await apiService.getCampagnes());
         setDropdownsLoaded(true);
-      } catch (error) {
+      } catch (error)
+      {
         console.error("Failed to load filter data", error);
       }
     };
@@ -57,9 +59,9 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
     if (selectedDate && datePickerTarget) {
       const formattedDate = selectedDate.toISOString().split('T')[0];
       onValueChange(datePickerTarget, formattedDate);
-      setDatePickerTarget(null); // Reset target after selection
+      setDatePickerTarget(null);
     } else {
-      setShowDatePicker(false); // Hide if no date is selected (e.g., user cancels)
+      setShowDatePicker(false);
     }
   };
 
@@ -86,7 +88,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
 
   return (
     <View style={Styles.filterContainer}>
-      <TouchableOpacity style={[localStyles.header]} onPress={() => setIsExpanded(!isExpanded)}>
+      <TouchableOpacity style={[localStyles.header,{marginTop:35}]} onPress={() => setIsExpanded(!isExpanded)}>
         <View style={localStyles.headerLeft}>
           <FadersHorizontal size={24} color={Colors.darkGray} />
           <Text style={Styles.filterTitle}>Filtres</Text>
@@ -99,7 +101,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
 
       {isExpanded && (
         <ScrollView>
-          {renderPicker("Magasins", filters.magasinID, (val) => onValueChange('magasinID', val), magasins, 'designation', 'id')}
+          {/* Le sélecteur de magasin a été retiré de l'interface utilisateur */}
           {renderPicker("Exportateurs", filters.exportateurID, (val) => onValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
           {renderPicker("Types", filters.mouvementTypeID, (val) => onValueChange('mouvementTypeID', val), types, 'designation', 'id')}
 
@@ -161,6 +163,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
     </View>
   );
 };
+// ================= FIN DU COMPOSANT MODIFIÉ =================
 
 const localStyles = StyleSheet.create({
     header: {

@@ -1,18 +1,19 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-// On importe bien toutes les icônes nécessaires
 import { ArrowCircleUp, ArrowCircleDown, Archive, Stack, Barbell } from 'phosphor-react-native';
+import { AuthContext } from '../../contexts/AuthContext'; // Importer votre AuthContext
 
 import MouvementStockFilter, { MouvementStockFilters } from './components/MouvementStockFilter';
 import MouvementStockTable from './components/MouvementStockTable';
 import MouvementStockDetailModal from './components/MouvementStockDetailModal';
 import { MouvementStock } from './type';
-
 import * as mouvementApiService from './routes';
-
 import { Styles, Colors } from '../../styles/style';
 
 const MouvementStockScreen = () => {
+  // On récupère l'utilisateur depuis le contexte
+  const { user } = useContext(AuthContext); 
+
   const getTodayDateString = () => new Date().toISOString().split('T')[0];
 
   const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
@@ -25,13 +26,11 @@ const MouvementStockScreen = () => {
   const [selectedItem, setSelectedItem] = useState<MouvementStock | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
-  // La logique de calcul du résumé reste la même et est correcte
   const summary = useMemo(() => {
     const initialSummary = {
         entree: { lots: 0, sacs: 0, poidsNet: 0 },
         sortie: { lots: 0, sacs: 0, poidsNet: 0 },
     };
-
     return mouvements.reduce((acc, mouvement) => {
         if (mouvement.sens === 1) {
             acc.entree.lots += 1;
@@ -47,25 +46,37 @@ const MouvementStockScreen = () => {
   }, [mouvements]);
 
   const fetchMouvements = useCallback(async () => {
+    // On attend d'avoir les infos de l'utilisateur pour lancer la requête
+    if (!user?.magasinID) {
+      setMouvements([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
+      
+      // Ajout des filtres de l'interface
       if (filters.dateDebut) queryParams.append('DateDebut', filters.dateDebut);
       if (filters.dateFin) queryParams.append('DateFin', filters.dateFin);
       if (filters.exportateurID) queryParams.append('ExportateurID', filters.exportateurID);
       if (filters.campagneID) queryParams.append('CampagneID', filters.campagneID);
       if (filters.mouvementTypeID) queryParams.append('MouvementTypeID', filters.mouvementTypeID);
       if (filters.sens) queryParams.append('Sens', filters.sens);
-      if (filters.magasinID) queryParams.append('MagasinID', filters.magasinID);
+      
+      // Ajout OBLIGATOIRE du magasin de l'utilisateur comme paramètre
+      queryParams.append('MagasinID', user.magasinID.toString());
 
       const data = await mouvementApiService.getMouvements(queryParams);
       setMouvements(data);
     } catch (error) {
-      console.error("Failed to fetch stock movements:", error);
+      console.error("Échec de la récupération des mouvements de stock:", error);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, user]);
+
 
   useEffect(() => {
     fetchMouvements();
@@ -95,10 +106,8 @@ const MouvementStockScreen = () => {
 
   const renderSummaryHeader = () => (
     <View style={localStyles.summaryRow}>
-      {/* Carte des Entrées */}
       <View style={localStyles.card}>
           <View style={localStyles.cardTitleContainer}>
-              {/* ## MODIFICATION ## : Icône descendante (entrée) en vert */}
               <ArrowCircleDown size={22} color={Colors.success} />
               <Text style={localStyles.cardTitle}>Entrées</Text>
           </View>
@@ -108,11 +117,8 @@ const MouvementStockScreen = () => {
               <View style={localStyles.summaryItem}><Barbell size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.entree.poidsNet.toFixed(0)} kg</Text><Text style={localStyles.summaryLabel}>Poids Net</Text></View>
           </View>
       </View>
-
-      {/* Carte des Sorties */}
       <View style={localStyles.card}>
           <View style={localStyles.cardTitleContainer}>
-              {/* ## MODIFICATION ## : Icône montante (sortie) en rouge */}
               <ArrowCircleUp size={22} color={Colors.danger} />
               <Text style={localStyles.cardTitle}>Sorties</Text>
           </View>
@@ -154,13 +160,11 @@ const MouvementStockScreen = () => {
 
 export default MouvementStockScreen;
 
-// ## MODIFICATION DES STYLES ##
 const localStyles = StyleSheet.create({
-    // Style de base pour une carte, utilisé par les deux cartes de résumé
     card: { 
         backgroundColor: '#ffffff', 
         borderRadius: 12, 
-        marginBottom: 16, // Espace vertical entre les cartes
+        marginBottom: 16, 
         padding: 16, 
         elevation: 3, 
         shadowColor: '#000', 
@@ -168,13 +172,10 @@ const localStyles = StyleSheet.create({
         shadowOpacity: 0.1, 
         shadowRadius: 4, 
     },
-    // Conteneur pour les cartes de résumé
     summaryRow: {
         marginHorizontal: 12,
         marginTop: 16,
     },
-    // Le style spécifique pour les cartes de résumé n'est plus nécessaire
-    // summaryCard: { ... }
     cardTitleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
