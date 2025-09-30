@@ -41,7 +41,7 @@ const TransfertScreen = () => {
                 const filteredMagasins = data.filter(m => m.id !== user?.magasinID);
                 setMagasins(filteredMagasins);
             } catch (error) {
-                console.error("Failed to load magasins", error);
+                //console.error("Failed to load magasins", error);
                 Alert.alert("Erreur", "Impossible de charger la liste des magasins.");
             }
         };
@@ -120,7 +120,7 @@ const TransfertScreen = () => {
         } catch (error: any) {
             const serverMessage = error.response?.data?.message || error.message;
             const displayMessage = serverMessage || "Une erreur inattendue est survenue.";
-            console.error("Échec de l'opération de transfert:", JSON.stringify(error, null, 2));
+            //console.error("Échec de l'opération de transfert:", JSON.stringify(error, null, 2));
             Alert.alert("Échec de l'opération", displayMessage);
         } finally {
             setIsSubmitting(false);

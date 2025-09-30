@@ -29,7 +29,7 @@ function HomeStack() {
       <Stack.Screen
         name="MouvementStock"
         component={MouvementStockScreen}
-        options={{ headerShown: false }}
+        options={{ headerTitle: 'Mouvement' }}
       />
       <Stack.Screen
         name="Entre"

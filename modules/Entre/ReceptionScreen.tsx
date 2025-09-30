@@ -67,13 +67,13 @@ const ReceptionScreen = () => {
         };
 
         // --- 3. JOURNALISATION (LOG) POUR LE DÉBOGAGE ---
-        console.log('--- CONTEXTE DE DÉBOGAGE POUR LA RÉCEPTION ---');
+        /*console.log('--- CONTEXTE DE DÉBOGAGE POUR LA RÉCEPTION ---');
         console.log(`Lot N°: ${item.numeroLot} (ID du Transfert: ${item.id})`);
         console.log(`Magasin Expéditeur (Original): ${item.magasinExpeditionID}`);
         console.log(`Magasin de Destination (Envoyé): ${receptionData.destinationID}`);
         console.log('-------------------------------------------------');
         console.log('>> 1. Données envoyées à validerReception :', JSON.stringify(receptionData, null, 2));
-
+*/
         // --- 4. EXÉCUTION DES APPELS API ---
         try {
             // --- BLOC 1 : Tentative de validation de la réception ---
@@ -111,7 +111,7 @@ const ReceptionScreen = () => {
                     lotID: item.lotID,
                 };
 
-                console.log('>> 2. Données envoyées à createMouvementStock :', JSON.stringify(mouvementData, null, 2));
+                //console.log('>> 2. Données envoyées à createMouvementStock :', JSON.stringify(mouvementData, null, 2));
                 
                 await createMouvementStock(mouvementData);
 

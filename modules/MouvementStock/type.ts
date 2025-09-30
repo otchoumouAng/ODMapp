@@ -1,10 +1,13 @@
+// MouvementStock/type.ts
+
 export interface MouvementStock {
-  ID: string;
+  // ## CORRECTION : Passage de toutes les propriétés en camelCase ##
+  id: string;
   magasinId: number;
   campagneID: string;
   exportateurId?: number;
   certificationId?: number;
-  datemouvement: string;
+  dateMouvement: string; // Nom de propriété corrigé
   sens: number;
   mouvementTypeId: number;
   objectEnStockID?: string;
@@ -13,22 +16,22 @@ export interface MouvementStock {
   statut: string;
   reference1?: string;
   reference2?: string;
-  poidsbrut: number;
-  tarebags: number;
-  tarepalette: number;
-  poidsnetlivre: number;
-  retention: number;
-  poidsnetaccepte: number;
-  CreationUser: string;
-  EmplacementID?: number;
-  sactypeId?: number;
+  poidsBrut: number;       // Nom de propriété corrigé
+  tareSacs: number;        // Nom de propriété corrigé
+  tarePalettes: number;    // Nom de propriété corrigé
+  poidsNetLivre: number;   // Nom de propriété corrigé
+  retentionPoids: number;  // Nom de propriété corrigé
+  poidsNetAccepte: number; // Nom de propriété corrigé
+  creationUtilisateur: string; // Nom de propriété corrigé
+  emplacementID?: number;
+  sacTypeId?: number;      // Nom de propriété corrigé
   commentaire?: string;
-  SiteID: number;
+  siteID: number;
   produitID?: number;
   lotID?: string;
-  RowVersion: any;
+  rowVersion: any;
 
-  // Fields that might not be part of the creation DTO
+  // Champs joints (déjà en camelCase ou PascalCase selon le backend, on harmonise)
   magasinNom?: string;
   exportateurNom?: string;
   mouvementTypeDesignation?: string;

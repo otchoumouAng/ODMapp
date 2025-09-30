@@ -39,12 +39,12 @@ const SortieScreen = () => {
       }
 
       setLoading(true);
-      console.log("Recherche de lots avec les filtres :", filters);
+      //console.log("Recherche de lots avec les filtres :", filters);
       try {
         const data = await getStockLots(filters);
         setLots(data);
       } catch (error) {
-        console.error("Failed to load lots for sortie:", error);
+        //console.error("Failed to load lots for sortie:", error);
       } finally {
         setLoading(false);
       }
@@ -71,11 +71,11 @@ const SortieScreen = () => {
 
   return (
     <View style={[Styles.container, { backgroundColor: Colors.lightGray }]}>
-      <Filtre
+      {/*<Filtre
         activeFilters={filters}
         onFilterChange={handleFilterChange}
         onReset={handleResetFilters}
-      />
+      />*/}
       <FlatList
         data={lots}
         renderItem={({ item }) => (

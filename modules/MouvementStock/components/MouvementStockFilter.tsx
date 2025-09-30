@@ -86,7 +86,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
 
   return (
     <View style={Styles.filterContainer}>
-      <TouchableOpacity style={[localStyles.header,{marginTop:35}]} onPress={() => setIsExpanded(!isExpanded)}>
+      <TouchableOpacity style={[localStyles.header]} onPress={() => setIsExpanded(!isExpanded)}>
         <View style={localStyles.headerLeft}>
           <FadersHorizontal size={24} color={Colors.darkGray} />
           <Text style={Styles.filterTitle}>Filtres</Text>

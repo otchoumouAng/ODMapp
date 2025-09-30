@@ -26,7 +26,7 @@ const EntreeScreen = () => {
                     const data = await getLotsARecevoir(user.magasinID);
                     setLots(data);
                 } catch (error) {
-                    console.error("Échec du chargement des lots à recevoir:", error);
+                    //console.error("Échec du chargement des lots à recevoir:", error);
                     Alert.alert("Erreur", "Impossible de charger les lots à recevoir.");
                 } finally {
                     setLoading(false);
