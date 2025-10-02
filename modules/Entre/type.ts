@@ -12,7 +12,7 @@ export interface ReceptionData {
     nombrePalette: number;
     poidsNetRecu: number;
     tareSacRecu: number;
-    poidsbrut: number; // Correction: Assurer la correspondance avec le paramètre de la SP (@poidsbrut)
+    poidsBrut: number;
     tarePaletteArrive: number;
     rowVersionKey: any; // Le format exact dépend de votre gestion (ex: string base64)
 }
