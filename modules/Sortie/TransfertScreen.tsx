@@ -21,7 +21,8 @@ const TransfertScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { user } = useContext(AuthContext);
-    const { item } = route.params as { item: StockLot & { lotID: string } };
+    // On s'assure que le type de `item` inclut les propriétés de tare optionnelles
+    const item = route.params.item as StockLot & { lotID: string, tareSacs?: number, tarePalettes?: number };
 
     const [operationType, setOperationType] = useState<'transfert' | 'empotage' | 'export'>('transfert');
     const [transfertMode, setTransfertMode] = useState<'total' | 'partiel'>('total');
@@ -41,87 +42,103 @@ const TransfertScreen = () => {
                 const filteredMagasins = data.filter(m => m.id !== user?.magasinID);
                 setMagasins(filteredMagasins);
             } catch (error) {
-                //console.error("Failed to load magasins", error);
                 Alert.alert("Erreur", "Impossible de charger la liste des magasins.");
             }
         };
         loadMagasins();
     }, [user]);
 
-    // --- NOUVEAU HOOK : Gère la logique de destination en fonction du type d'opération ---
     useEffect(() => {
-        if (operationType === 'empotage') {
-            setDestinationMagasinId('3'); // Valeur pour "Magasin empotage"
-        } else if (operationType === 'export') {
+        if (operationType === 'export') {
             setDestinationMagasinId('1000'); // Valeur pour "N/A"
         } else {
-            // Réinitialiser si l'utilisateur revient à "transfert"
+            // Pour 'transfert' ET 'empotage', on réinitialise pour laisser l'utilisateur choisir
             setDestinationMagasinId('');
         }
     }, [operationType]);
 
+    useEffect(() => {
+        if (transfertMode === 'total') {
+            setNombreSacs(item.quantite);
+        } else {
+            // En mode partiel, on vide le champ pour que l'utilisateur saisisse une valeur
+            setNombreSacs(undefined); 
+        }
+    }, [transfertMode, item.quantite]);
+
 
     const handleTransfert = async () => {
+        const sacsATransferer = Number(nombreSacs);
+
         // --- Validations ---
-        if (operationType === 'transfert' && !destinationMagasinId) {
-            Alert.alert("Validation", "Veuillez sélectionner un magasin de destination.");
-            return;
+        if ((operationType === 'transfert' || operationType === 'empotage') && !destinationMagasinId) {
+            Alert.alert("Validation", "Veuillez sélectionner un magasin de destination."); return;
         }
         if (!numBordereau.trim()) {
-            Alert.alert("Validation", "Le numéro du bordereau est obligatoire.");
-            return;
+            Alert.alert("Validation", "Le numéro du bordereau est obligatoire."); return;
         }
         if (!user || !user.magasinID || !user.locationID || !user.name) {
-            Alert.alert("Erreur", "Utilisateur non authentifié ou informations manquantes.");
-            return;
+            Alert.alert("Erreur", "Utilisateur non authentifié ou informations manquantes."); return;
         }
         if (!item.lotID) {
-            Alert.alert("Erreur Critique", "L'identifiant du lot (GUID) est manquant. Impossible de continuer.");
-            return;
+            Alert.alert("Erreur Critique", "L'identifiant du lot (GUID) est manquant."); return;
         }
-        if (item.poidsBrut == null || item.poidsNetAccepte == null) {
-            Alert.alert("Données de lot invalides", "Le poids brut ou le poids net du lot sélectionné sont manquants.");
-            return;
+        if (transfertMode === 'partiel' && (!sacsATransferer || sacsATransferer <= 0 || sacsATransferer >= item.quantite)) {
+            Alert.alert("Validation", `Le nombre de sacs doit être supérieur à 0 et inférieur à ${item.quantite}.`); return;
         }
 
         setIsSubmitting(true);
 
-        // --- Objet de données final et correct ---
+        // --- Calcul final au prorata ---
+        let poidsNetExpedition: number;
+        let poidsBrutExpedition: number;
+        let tareSacsExpedition: number;
+        let tarePaletteExpedition: number;
+
+        if (transfertMode === 'partiel') {
+            const proportion = sacsATransferer / item.quantite;
+            
+            poidsNetExpedition = (item.poidsNetAccepte || 0) * proportion;
+            poidsBrutExpedition = (item.poidsBrut || 0) * proportion;
+            tareSacsExpedition = (item.tareSacs || 0) * proportion;
+            tarePaletteExpedition = (item.tarePalettes || 0) * proportion;
+        } else { // Mode total
+            poidsNetExpedition = item.poidsNetAccepte || 0;
+            poidsBrutExpedition = item.poidsBrut || 0;
+            tareSacsExpedition = item.tareSacs || 0;
+            tarePaletteExpedition = item.tarePalettes || 0;
+        }
+
         const transfertData = {
             lotID: item.lotID,
             campagneID: item.campagneID || "2024/2025",
             siteID: user.locationID,
-            numeroLot: item.reference,
             numBordereauExpedition: numBordereau,
             magasinExpeditionID: user.magasinID,
-            nombreSacsExpedition: nombreSacs ?? 0,
-            nombrePaletteExpedition: 0,
-            tareSacsExpedition: item.poidsBrut - item.poidsNetAccepte,
-            tarePaletteExpedition: 0,
-            poidsBrutExpedition: item.poidsBrut,
-            poidsNetExpedition: item.poidsNetAccepte,
+            nombreSacsExpedition: sacsATransferer,
+            nombrePaletteExpedition: 0, // Cette valeur est fixée à 0
+            tareSacsExpedition: tareSacsExpedition,
+            tarePaletteExpedition: tarePaletteExpedition,
+            poidsBrutExpedition: poidsBrutExpedition,
+            poidsNetExpedition: poidsNetExpedition,
             immTracteurExpedition: tracteur,
             immRemorqueExpedition: remorque,
             dateExpedition: new Date().toISOString(),
             commentaireExpedition: commentaire,
-            statut: "TR", // Statut "En Transit"
+            statut: "NA", // Statut "En Transit" corrigé
             magReceptionTheoID: parseInt(destinationMagasinId, 10) || 0,
             modeTransfertID: transfertMode === 'total' ? 1 : 2,
-            typeOperationID: operationType === 'transfert' ? 1 : (operationType === 'empotage' ? 2 : 3), // Ajustement pour correspondre à l'API
+            typeOperationID: operationType === 'transfert' ? 1 : (operationType === 'empotage' ? 2 : 3),
             creationUtilisateur: user.name,
         };
 
         try {
-            // --- Un seul appel API qui gère toute la logique ---
             await createTransfert(transfertData);
-
             Toast.show({ type: 'success', text1: 'Opération réussie', text2: `La sortie du lot ${item.reference} a été validée.` });
             navigation.goBack();
         } catch (error: any) {
             const serverMessage = error.response?.data?.message || error.message;
-            const displayMessage = serverMessage || "Une erreur inattendue est survenue.";
-            //console.error("Échec de l'opération de transfert:", JSON.stringify(error, null, 2));
-            Alert.alert("Échec de l'opération", displayMessage);
+            Alert.alert("Échec de l'opération", serverMessage || "Une erreur inattendue est survenue.");
         } finally {
             setIsSubmitting(false);
         }
@@ -137,30 +154,26 @@ const TransfertScreen = () => {
                     <Text style={localStyles.sectionTitle}>Détails du Lot</Text>
                     <InfoRow label="Produit" value={item.libelleProduit} />
                     <InfoRow label="Certification" value={item.nomCertification} />
-                    <InfoRow label="Poids Net" value={`${item.poidsNetAccepte?.toFixed(2)} kg`} />
-                    <InfoRow label="Nombre de Sacs" value={item.quantite} />
+                    <InfoRow label="Poids Net Total" value={`${item.poidsNetAccepte?.toFixed(2)} kg`} />
+                    <InfoRow label="Sacs en stock" value={item.quantite} />
                 </View>
 
                 <View style={localStyles.sectionContainer}>
                     <Text style={localStyles.sectionTitle}>Détails de l'Opération</Text>
-                    
                     <TextInput style={Styles.filterInput} placeholder="Numéro du Bordereau *" value={numBordereau} onChangeText={setNumBordereau} />
-                    <TextInput style={Styles.filterInput} placeholder="Commentaire *" value={commentaire} onChangeText={setCommentaire} multiline />
-                    
-                    <Picker selectedValue={operationType} onValueChange={(itemValue: 'transfert' | 'empotage' | 'export') => setOperationType(itemValue)}>
+                    <TextInput style={Styles.filterInput} placeholder="Commentaire" value={commentaire} onChangeText={setCommentaire} multiline />
+                    <Picker selectedValue={operationType} onValueChange={(itemValue) => setOperationType(itemValue)}>
                         <Picker.Item label='Transfert inter-magasin' value='transfert' />
                         <Picker.Item label='Sortie pour empotage' value='empotage' />
                         <Picker.Item label='Sortie pour export' value='export' />
                     </Picker>
-                    <Picker selectedValue={transfertMode} onValueChange={(itemValue: 'total' | 'partiel') => setTransfertMode(itemValue)}>
+                    <Picker selectedValue={transfertMode} onValueChange={(itemValue) => setTransfertMode(itemValue)}>
                         <Picker.Item label='Total' value='total' />
                         <Picker.Item label='Partiel' value='partiel' />
                     </Picker>
-                    
-                    {/* --- MODIFICATION : Affichage conditionnel du sélecteur de magasin --- */}
                     <Text style={localStyles.inputLabel}>Magasin de destination</Text>
-                    {operationType === 'transfert' ? (
-                        <Picker selectedValue={destinationMagasinId} onValueChange={(itemValue: string) => setDestinationMagasinId(itemValue)}>
+                    {operationType === 'transfert' || operationType === 'empotage' ? (
+                        <Picker selectedValue={destinationMagasinId} onValueChange={(itemValue) => setDestinationMagasinId(itemValue)}>
                             <Picker.Item label="-- Sélectionnez un magasin --" value="" />
                             {magasins.map(magasin => (
                                 <Picker.Item key={magasin.id} label={magasin.designation} value={magasin.id.toString()} />
@@ -169,19 +182,17 @@ const TransfertScreen = () => {
                     ) : (
                         <TextInput
                           style={[Styles.filterInput, localStyles.disabledInput, { marginTop: 15, marginBottom: 6}]}
-                          value={operationType === 'empotage' ? "Magasin empotage" : "N/A"}
+                          value={"N/A (Sortie pour Export)"}
                           editable={false}
                         />
-
                     )}
-
                     <TextInput style={Styles.filterInput} placeholder="Tracteur" value={tracteur} onChangeText={setTracteur} />
                     <TextInput style={Styles.filterInput} placeholder="Remorque" value={remorque} onChangeText={setRemorque} />
                     <TextInput
                         style={[Styles.filterInput, transfertMode === 'total' && localStyles.disabledInput]}
-                        placeholder="Nombre de sacs"
-                        value={nombreSacs?.toString()}
-                        onChangeText={(text) => setNombreSacs(Number(text))}
+                        placeholder="Nombre de sacs à transférer *"
+                        value={nombreSacs?.toString() || ''}
+                        onChangeText={(text) => setNombreSacs(text ? parseInt(text, 10) : undefined)}
                         editable={transfertMode === 'partiel'}
                         keyboardType="numeric"
                     />
@@ -207,10 +218,6 @@ const localStyles = StyleSheet.create({
         padding: 16,
         marginBottom: 20,
         elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
     },
     sectionTitle: {
         fontSize: 18,
@@ -242,15 +249,15 @@ const localStyles = StyleSheet.create({
         fontWeight: '500',
         color: Colors.dark,
     },
-    inputLabel: { // Style ajouté pour le label
+    inputLabel: {
         fontSize: 16,
         color: Colors.darkGray,
         marginLeft: 8,
-        marginBottom: -8, // Pour rapprocher le label du champ
+        marginBottom: -8,
     },
     disabledInput: {
         backgroundColor: '#e9ecef',
-        color: '#495057', // Couleur de texte pour la lisibilité
+        color: '#495057',
     }
 });
 
