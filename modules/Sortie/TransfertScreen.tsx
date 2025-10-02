@@ -111,7 +111,7 @@ const TransfertScreen = () => {
 
         const transfertData = {
             lotID: item.lotID,
-            numeroLot: item.numeroLot,
+            NumeroLot: item.numeroLot,
             campagneID: item.campagneID || "2024/2025",
             siteID: user.locationID,
             numBordereauExpedition: numBordereau,
