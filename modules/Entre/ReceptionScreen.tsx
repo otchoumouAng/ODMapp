@@ -56,7 +56,7 @@ const ReceptionScreen = () => {
             commentaireRec: commentaire.trim(),
             nombreSac: parseInt(nombreSacs, 10) || 0,
             nombrePalette: parseInt(nombrePalettes, 10) || 0,
-            poidsBrut: parseFloat(poidsBrut) || 0,
+            poidsbrut: parseFloat(poidsBrut) || 0, // Correction du nom de la propriété
             poidsNetRecu: parseFloat(poidsNet) || 0,
             tareSacRecu: (parseFloat(poidsBrut) || 0) - (parseFloat(poidsNet) || 0),
             tarePaletteArrive: 0, 
