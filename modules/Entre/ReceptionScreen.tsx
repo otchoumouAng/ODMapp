@@ -7,8 +7,6 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { TransfertLot } from '../Shared/type';
 import { ReceptionData } from './type';
 import { validerReception } from './routes';
-import { createMouvementStock } from '../MouvementStock/routes';
-import { MouvementStock } from '../MouvementStock/type';
 
 const InfoRow = ({ label, value }: { label: string, value: any }) => (
     <View style={localStyles.infoRow}><Text style={localStyles.infoLabel}>{label}</Text><Text style={localStyles.infoValue}>{value ?? 'N/A'}</Text></View>
@@ -74,59 +72,14 @@ const ReceptionScreen = () => {
         console.log('-------------------------------------------------');
         console.log('>> 1. Données envoyées à validerReception :', JSON.stringify(receptionData, null, 2));
 */
-        // --- 4. EXÉCUTION DES APPELS API ---
+        // --- 4. EXÉCUTION DE L'APPEL API ---
         try {
-            // --- BLOC 1 : Tentative de validation de la réception ---
+            // Appel unique pour valider la réception (ce qui crée aussi le mouvement de stock côté backend)
             await validerReception(item.id, receptionData);
 
-            // Si la réception réussit, on tente de créer le mouvement de stock.
-            try {
-                // --- BLOC 2 : Tentative de création du mouvement de stock ---
-                const mouvementData: Partial<MouvementStock> = {
-                    magasinId: user.magasinID,
-                    campagneID: item.campagneID,
-                    exportateurId: item.exportateurID,
-                    certificationId: item.certificationID,
-                    datemouvement: new Date().toISOString(),
-                    sens: 1, // Entrée
-                    mouvementTypeId: 31, // Type: Entrée de lot
-                    objectEnStockID: item.lotID,
-                    objectEnStockType: 1, // Type: Lot
-                    quantite: receptionData.nombreSac,
-                    statut: 'AP',
-                    reference1: item.numeroLot,
-                    reference2: receptionData.numBordereauRec,
-                    poidsbrut: receptionData.poidsBrut,
-                    tarebags: receptionData.tareSacRecu,
-                    tarepalette: receptionData.tarePaletteArrive,
-                    poidsnetlivre: receptionData.poidsNetRecu,
-                    retention: 0,
-                    poidsnetaccepte: receptionData.poidsNetRecu,
-                    CreationUtilisateur: user.name,
-                    EmplacementID: 1, 
-                    sactypeId: item.sacTypeID,
-                    commentaire: receptionData.commentaireRec,
-                    SiteID: user.locationID,
-                    produitID: item.produitID,
-                    lotID: item.lotID,
-                };
-
-                //console.log('>> 2. Données envoyées à createMouvementStock :', JSON.stringify(mouvementData, null, 2));
-                
-                await createMouvementStock(mouvementData);
-
-                // SUCCÈS : Les deux opérations ont réussi.
-                Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${item.numeroLot} est entré en stock.` });
-                navigation.goBack();
-
-            } catch (stockError: any) {
-                // ÉCHEC CRITIQUE : La réception a réussi, mais le mouvement a échoué.
-                Alert.alert(
-                    "ERREUR CRITIQUE",
-                    `Le lot a été validé en réception, mais son entrée en stock a échoué.\n\nVeuillez contacter le support technique pour une correction manuelle.`
-                );
-                navigation.goBack();
-            }
+            // SUCCÈS : L'opération a réussi.
+            Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${item.numeroLot} est entré en stock.` });
+            navigation.goBack();
 
         } catch (receptionError: any) {
             // GESTION AMÉLIORÉE DES ERREURS DE RÉCEPTION
