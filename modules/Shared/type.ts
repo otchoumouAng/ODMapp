@@ -64,3 +64,52 @@ export interface Magasin {
     pontBascule: boolean;
 }
 
+
+export interface TransfertLot {
+    id: string;
+    campagneID: string;
+    siteID: number;
+    siteNom: string | null;
+    lotID: string;
+    numeroLot: string;
+    exportateurID: number;
+    exportateurNom: string | null;
+    numeroExpedition: string;
+    numBordereauExpedition: string;
+    magasinExpeditionID: number;
+    magasinExpeditionNom: string | null;
+    nombreSacsExpedition: number;
+    nombrePaletteExpedition: number;
+    tareSacsExpedition: number;
+    tarePaletteExpedition: number;
+    poidsBrutExpedition: number;
+    poidsNetExpedition: number;
+    immTracteurExpedition: string;
+    immRemorqueExpedition: string;
+    dateExpedition: string;
+    commentaireExpedition: string;
+    numBordereauReception: string | null;
+    magasinReceptionID: number | null;
+    magasinReceptionNom: string | null;
+    nombreSacsReception: number | null;
+    nombrePaletteReception: number | null;
+    poidsNetReception: number | null;
+    poidsBrutReception: number | null;
+    tareSacsReception: number | null;
+    tarePaletteReception: number | null;
+    immTracteurReception: string | null;
+    immRemorqueReception: string | null;
+    commentaireReception: string | null;
+    dateReception: string | null;
+    statut: string;
+    desactive: boolean | null;
+    creationUtilisateur: string;
+    creationDate: string;
+    modificationUtilisateur: string | null;
+    modificationDate: string | null;
+    rowVersionKey: any;
+    magReceptionTheoID: number;
+    magReceptionTheoNom: string | null;
+    modeTransfertID: number;
+    typeOperationID: number;
+}
