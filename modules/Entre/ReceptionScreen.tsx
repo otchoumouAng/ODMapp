@@ -23,12 +23,12 @@ const ReceptionScreen = () => {
     const [tracteur, setTracteur] = useState('');
     const [remorque, setRemorque] = useState('');
     const [commentaire, setCommentaire] = useState('');
-    const [nombreSacs, setNombreSacs] = useState(item.nombreSacsExpedition?.toString() ?? '0');
-    const [nombrePalettes, setNombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '0');
-    const [poidsBrut, setPoidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '0');
-    const [poidsNet, setPoidsNet] = useState(item.poidsNetExpedition?.toString() ?? '0');
-    const [tareSacs, setTareSacs] = useState(item.tareSacsExpedition?.toString() ?? '0');
-    const [tarePalettes, setTarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '0');
+    const [nombreSacs, setNombreSacs] = useState(item.nombreSacsExpedition?.toString() ?? '');
+    const [nombrePalettes, setNombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '');
+    const [poidsBrut, setPoidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '');
+    const [poidsNet, setPoidsNet] = useState(item.poidsNetExpedition?.toString() ?? '');
+    const [tareSacs, setTareSacs] = useState(item.tareSacsExpedition?.toString() ?? '');
+    const [tarePalettes, setTarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '');
     
     const [isSubmitting, setIsSubmitting] = useState(false);
 
