@@ -27,6 +27,8 @@ const ReceptionScreen = () => {
     const [nombrePalettes, setNombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '0');
     const [poidsBrut, setPoidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '0');
     const [poidsNet, setPoidsNet] = useState(item.poidsNetExpedition?.toString() ?? '0');
+    const [tareSacs, setTareSacs] = useState(item.tareSacsExpedition?.toString() ?? '0');
+    const [tarePalettes, setTarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '0');
     
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,6 +42,21 @@ const ReceptionScreen = () => {
         }
         if (!numBordereau.trim()) {
             Alert.alert("Champ requis", "Le numéro de bordereau de réception est obligatoire.");
+            return;
+        }
+
+        // Validation des champs de poids et de tare
+        if (!poidsNet.trim() || !tareSacs.trim() || !tarePalettes.trim()) {
+            Alert.alert("Champs obligatoires", "Veuillez remplir le Poids Net, la Tare Sacs et la Tare Palettes.");
+            return;
+        }
+
+        const parsedPoidsNet = parseFloat(poidsNet);
+        const parsedTareSacs = parseFloat(tareSacs);
+        const parsedTarePalettes = parseFloat(tarePalettes);
+
+        if (isNaN(parsedPoidsNet) || isNaN(parsedTareSacs) || isNaN(parsedTarePalettes)) {
+            Alert.alert("Valeurs invalides", "Les poids et tares doivent être des nombres valides.");
             return;
         }
 
@@ -58,8 +75,8 @@ const ReceptionScreen = () => {
             nombrePalette: parseInt(nombrePalettes, 10) || 0,
             poidsBrut: parseFloat(poidsBrut) || 0,
             poidsNetRecu: parseFloat(poidsNet) || 0,
-            tareSacRecu: item.tareSacsExpedition ?? 0,
-            tarePaletteArrive: item.tarePaletteExpedition ?? 0,
+            tareSacRecu: parseFloat(tareSacs) || 0,
+            tarePaletteArrive: parseFloat(tarePalettes) || 0,
             statut: 'RE', // Statut 'Reçu'
             rowVersionKey: item.rowVersionKey,
         };
@@ -124,6 +141,8 @@ const ReceptionScreen = () => {
                     <TextInput style={Styles.filterInput} placeholder="Nombre de palettes *" value={nombrePalettes} onChangeText={setNombrePalettes} keyboardType="numeric" />
                     <TextInput style={Styles.filterInput} placeholder="Poids Brut Réception *" value={poidsBrut} onChangeText={setPoidsBrut} keyboardType="decimal-pad" />
                     <TextInput style={Styles.filterInput} placeholder="Poids Net Réception *" value={poidsNet} onChangeText={setPoidsNet} keyboardType="decimal-pad" />
+                    <TextInput style={Styles.filterInput} placeholder="Tare Sacs Réception *" value={tareSacs} onChangeText={setTareSacs} keyboardType="decimal-pad" />
+                    <TextInput style={Styles.filterInput} placeholder="Tare Palettes Réception *" value={tarePalettes} onChangeText={setTarePalettes} keyboardType="decimal-pad" />
                     <TextInput style={Styles.filterInput} placeholder="Commentaire" value={commentaire} onChangeText={setCommentaire} multiline />
                 </View>
 
