@@ -40,24 +40,33 @@ const ReceptionScreen = () => {
             Alert.alert("Erreur d'utilisateur", "Vos informations utilisateur sont incomplètes. Impossible de continuer.");
             return;
         }
-        if (!numBordereau.trim()) {
-            Alert.alert("Champ requis", "Le numéro de bordereau de réception est obligatoire.");
-            return;
+        // --- VALIDATION COMPLÈTE DU FORMULAIRE ---
+        const requiredFields = [
+            { name: 'N° Bordereau Réception', value: numBordereau },
+            { name: 'Tracteur', value: tracteur },
+            { name: 'Remorque', value: remorque },
+            { name: 'Nombre de sacs', value: nombreSacs },
+            { name: 'Nombre de palettes', value: nombrePalettes },
+            { name: 'Poids Brut Réception', value: poidsBrut },
+            { name: 'Poids Net Réception', value: poidsNet },
+            { name: 'Tare Sacs Réception', value: tareSacs },
+            { name: 'Tare Palettes Réception', value: tarePalettes },
+        ];
+
+        for (const field of requiredFields) {
+            if (!field.value.trim()) {
+                Alert.alert("Champ obligatoire", `Veuillez remplir le champ : ${field.name}`);
+                return;
+            }
         }
 
-        // Validation des champs de poids et de tare
-        if (!poidsNet.trim() || !tareSacs.trim() || !tarePalettes.trim()) {
-            Alert.alert("Champs obligatoires", "Veuillez remplir le Poids Net, la Tare Sacs et la Tare Palettes.");
-            return;
-        }
-
-        const parsedPoidsNet = parseFloat(poidsNet);
-        const parsedTareSacs = parseFloat(tareSacs);
-        const parsedTarePalettes = parseFloat(tarePalettes);
-
-        if (isNaN(parsedPoidsNet) || isNaN(parsedTareSacs) || isNaN(parsedTarePalettes)) {
-            Alert.alert("Valeurs invalides", "Les poids et tares doivent être des nombres valides.");
-            return;
+        // Validation numérique pour les champs concernés
+        const numericFields = requiredFields.slice(3); // On prend à partir de 'Nombre de sacs'
+        for (const field of numericFields) {
+            if (isNaN(parseFloat(field.value))) {
+                Alert.alert("Valeur invalide", `Le champ "${field.name}" doit être un nombre valide.`);
+                return;
+            }
         }
 
         setIsSubmitting(true);
