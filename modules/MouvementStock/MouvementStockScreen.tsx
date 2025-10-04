@@ -112,7 +112,7 @@ const MouvementStockScreen = () => {
               <Text style={localStyles.cardTitle}>Entrées</Text>
           </View>
           <View style={localStyles.summaryContainer}>
-              <View style={localStyles.summaryItem}><Stack size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.entree.lots}</Text><Text style={localStyles.summaryLabel}>Lots</Text></View>
+              <View style={localStyles.summaryItem}><Stack size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.entree.lots}</Text><Text style={localStyles.summaryLabel}>Mouvement</Text></View>
               <View style={localStyles.summaryItem}><Archive size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.entree.sacs}</Text><Text style={localStyles.summaryLabel}>Sacs</Text></View>
               <View style={localStyles.summaryItem}><Barbell size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.entree.poidsNet.toFixed(0)} kg</Text><Text style={localStyles.summaryLabel}>Poids Net</Text></View>
           </View>
@@ -123,7 +123,7 @@ const MouvementStockScreen = () => {
               <Text style={localStyles.cardTitle}>Sorties</Text>
           </View>
           <View style={localStyles.summaryContainer}>
-              <View style={localStyles.summaryItem}><Stack size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.sortie.lots}</Text><Text style={localStyles.summaryLabel}>Lots</Text></View>
+              <View style={localStyles.summaryItem}><Stack size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.sortie.lots}</Text><Text style={localStyles.summaryLabel}>Mouvement</Text></View>
               <View style={localStyles.summaryItem}><Archive size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.sortie.sacs}</Text><Text style={localStyles.summaryLabel}>Sacs</Text></View>
               <View style={localStyles.summaryItem}><Barbell size={28} color={Colors.primary} /><Text style={localStyles.summaryValue}>{summary.sortie.poidsNet.toFixed(0)} kg</Text><Text style={localStyles.summaryLabel}>Poids Net</Text></View>
           </View>

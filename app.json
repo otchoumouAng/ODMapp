@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ODMApp",
+    "name": "DCS-TNCI",
     "slug": "ODMApp",
     "displayName": "DCS-TNCI",
     "version": "1.0.0",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },

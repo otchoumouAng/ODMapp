@@ -39,7 +39,7 @@ function HomeStack() {
       <Stack.Screen
         name="Sortie"
         component={SortieScreen}
-        options={{ headerTitle: 'Sorie de Lots' }}
+        options={{ headerTitle: 'Sortie de Lots' }}
       />
       <Stack.Screen
         name="Transfert"
