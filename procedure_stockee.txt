@@ -1,0 +1,912 @@
+USE [DigitalFlow.tnci]
+GO
+
+/****** Object:  StoredProcedure [dbo].[V2_MouvementStock_Select_mobil]    Script Date: 10/7/2025 12:36:47 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE OR ALTER   PROCEDURE [dbo].[V2_MouvementStock_Select_mobil]
+	@magasinID int = -1,
+	@campagneID varchar(9) = '{Toute}',
+	@exportateurID int = -1,
+	@mouvementTypeID int = -2,
+	@certificationID int = -1,
+	@sens smallint = -2,
+	@datedebut datetime = null,
+	@datefin datetime = null,
+	@status char(2) = '-1',
+	@EmplacementID int = 1,
+	@siteID int = -1
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	SELECT [mvID] as ID
+		, [mvMagasinID] as MagasinID
+		, M.maDesignation as MagasinNom
+		, [mvCampagneID] as CampagneID
+		, [mvMouvementTypeID] as MouvementTypeID
+		, MT.mtDesignation as MouvementTypeDesignation
+		, [mvExportateurID] as ExportateurID
+		, E.exNom as ExportateurNom
+		, [mvCertificationID] as CertificationID
+		, C.ceDesignation as CertificationDesignation
+		, [mvEmballageTypeID] as SacTypeID
+		, S.stDesignation as SacTypeDesignation
+		, [mvObjetEnStockID] as ObjetEnStockID
+		, [mvObjetEnStockType] as ObjetEnStockType
+		, mvEmplacementID EmplacementID
+		, EM.emDesignation EmplacementDesignation
+		, [mvReference1] as Reference1
+		, [mvReference2] as Reference2
+		, L.lvImmatriculation as Reference3
+		, [mvDate] as DateMouvement
+		, [mvSens] as Sens
+		, [mvQuantite] as Quantite
+		, [mvPoidsBrut] as PoidsBrut
+		, [mvTareSacs] as TareSacs
+		, [mvTarePalettes] as TarePalettes
+		, [mvPoidsNetLivre] as PoidsNetLivre
+		, [mvRetention] as RetentionPoids
+		, [mvPoidsNetAccepte] as PoidsNetAccepte
+		, [mvStatut] as Statut
+		, [mvCommentaire] as Commentaire
+		, [mvDesactive] as Desactive
+		, [mvApprobateur] as ApprobationUtilisateur
+		, [mvDateApprobation] as ApprobationDate
+		, [mvCreationUtilisateur] as CreationUtilisateur
+		, [mvCreationDate] as CreationDate
+		, [mvModificationUtilisateur] as ModificationUtilisateur
+		, [mvModificationDate] as ModificationDate
+		, [mvRowVersion] as RowVersionKey
+		, SI.maID SiteID
+		, SI.maDesignation SiteNom
+	FROM [dbo].[V2_MouvementStock] MS 
+	INNER JOIN dbo.V2_Magasin M on MS.mvMagasinID = M.maID
+	INNER JOIN dbo.V2_MouvementStockType MT on MT.mtID = MS.mvMouvementTypeID
+	LEFT JOIN dbo.Certification C on C.ceID = MS.mvCertificationID
+	LEFT JOIN dbo.SacType S on S.stID = MS.mvEmballageTypeID
+	
+	-- CORRECTION APPLIQUÉE ICI : Remplacement de INNER JOIN par LEFT JOIN
+	LEFT JOIN dbo.Exportateur E on E.exID = MS.mvExportateurID
+	
+	LEFT JOIN dbo.V2_Emplacement EM on EM.emID = MS.mvEmplacementID
+	LEFT JOIN dbo.BonDeLivraison BL on BL.blID = MS.mvObjetEnStockID
+	LEFT JOIN dbo.Livraison L on L.lvID = BL.blDeliveryID
+	INNER JOIN dbo.V2_Magasin SI on SI.maID = MS.mvMagasinID
+	WHERE
+		(@campagneID = '{Toute}' Or MS.mvCampagneID = @campagneID)
+		AND (@exportateurID = -1 Or MS.mvExportateurID = @exportateurID)
+		AND (@magasinID = -1 Or MS.mvMagasinID = @magasinID)
+		AND (@mouvementTypeID = -2 Or MS.mvMouvementTypeID = @mouvementTypeID)
+		AND (@sens = -2 Or MS.mvSens = @sens)
+		AND (@DateDebut is null or CAST(MS.mvDate as Date) >= CAST(@DateDebut as Date))
+		AND (@DateFin is null or CAST(MS.mvDate as Date) <= CAST(@DateFin as Date))
+		AND (@status = '-1' or MS.mvStatut = @status)
+	ORDER BY 
+		MS.mvDate desc
+END
+GO
+
+
+
+
+
+
+USE [DigitalFlow.tnci]
+GO
+
+/****** Object:  StoredProcedure [dbo].[V5_StatutStockLot_Select_mobil]    Script Date: 10/7/2025 12:37:14 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+
+CREATE OR ALTER PROCEDURE [dbo].[V5_StatutStockLot_Select_mobil]
+	-- Add the parameters for the stored procedure here
+	@magasinID varchar(50) = '',
+	@campagneID char(9) = '{Toute}',
+	@exportateurID int = -1,
+	@datedebut datetime = null,
+	@datefin datetime = null,
+	@emplacementID int = -1,
+	@siteID int = -1,
+	@produitID int = -1,
+	@certificationID int = -1,
+	@typeLotID int = -1,
+	@gradeLotID int = -1
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;	
+	
+	SET @magasinID = (select replace(@magasinID,'[',''))
+	SET @magasinID = (select replace(@magasinID,']',''))
+
+	if (@magasinID = -1)
+		SET @magasinID = ''
+
+	----if (@magasinID <> 3)	
+	--begin
+
+	SELECT 				
+		 1 ElementTypeID	
+		,'A' as ElementTypeDesignation
+		,MG.maID MagasinID
+		,MG.maDesignation MagasinNom
+		--,TS.teDesignation as ElementTypeDesignation
+		,M.mvReference2	Reference
+		,M.mvExportateurID ExportateurID 
+		,Ex.exNom ExportateurNom
+		--,M.mvQuantite as Quantite
+		----,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+		--,M.mvPoidsBrut PoidsBrut
+		--,M.mvTareSacs TareSacs
+		--,M.mvTarePalettes TarePalettes
+		--,M.mvPoidsNetLivre PoidsNetLivre
+		--,M.mvRetention RetentionPoids
+		--,M.mvPoidsNetAccepte PoidsNetAccepte
+		,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+		--,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+		,sum(ISNULL(M.mvPoidsBrut,0) * mvSens) PoidsBrut
+		,sum(isnull(M.mvTareSacs,0) * mvSens) TareSacs
+		,sum(ISNULL(M.mvTarePalettes,0) * mvSens) TarePalettes
+		,sum(isnull(M.mvPoidsNetLivre,0) * mvSens) PoidsNetLivre
+		,sum(isnull(M.mvRetention,0) * mvSens) RetentionPoids
+		,sum(ISNULL(M.mvPoidsNetAccepte,0) * mvSens) PoidsNetAccepte	
+		,LOT.ltProduitID ProduitID
+		,P.prDesignation LibelleProduit
+		,LOT.ltCertificationID CertificationID
+		,CE.ceDesignation NomCertification
+		,LOT.ltGradeLotID GradeLotID
+		,GR.grDesignation LibelleGradeLot
+		,LOT.ltTypeLotID TypeLotID	
+		,LOT.ltID lotID
+		,LT.ltDesignation LibelleTypeLot
+		--,TS.teDesignation mouvement
+	FROM dbo.V2_MouvementStock M inner join dbo.V2_MouvementStockType T on M.mvMouvementTypeID = T.mtID
+		inner join dbo.V2_Magasin MG on MG.maID = M.mvMagasinID
+		inner join dbo.V2_TypeElementStock TS on TS.teID = M.mvObjetEnStockType		
+		inner join dbo.Exportateur Ex on Ex.exID = M.mvExportateurID		
+		inner join dbo.V2_Lot LOT on LOT.ltID = M.mvLotID
+		left join dbo.Produit P on P.prID = LOT.ltProduitID
+		left join dbo.Certification CE on CE.ceID = LOT.ltCertificationID
+		left join dbo.V6_GradeLot GR on GR.grID = LOT.ltGradeLotID
+		left join dbo.V2_LotType LT on LT.ltID = LOT.ltTypeLotID
+		--left join dbo.BonDeLivraison BL on BL.blID = M.mvObjetEnStockID
+		--left join dbo.Livraison L on L.lvID = BL.blDeliveryID
+		cross join dbo.Parametres PR
+	WHERE 	
+		(@magasinID = '' or M.mvMagasinID in (select * from dbo.SimpleSplitFunction(@magasinID,',')))
+		AND (@campagneID = '{Toute}' or M.mvCampagneID = @campagneID)
+		AND (@exportateurID = -1 or M.mvExportateurID = @exportateurID)
+		AND (T.mtID in (12,30,31,9,24,32,33)) 
+		AND (@datefin is null or CAST(M.mvDate as Date) <= CAST(@datefin as Date))
+		AND (M.mvStatut = 'AP' )	
+		AND (LOT.ltStockMagasinID Is null or (LOT.ltStockMagasinID is not null and LOT.ltStockMagasinID <> 3 ))
+		--AND M.mvMagasinID <> 3
+		AND (@siteID = -1 or M.mvSiteID = @siteID)
+		AND (@produitID = -1 or M.mvProduitID = @produitID)
+		AND (@certificationID = -1 or LOT.ltCertificationID = @certificationID)
+		AND (@typeLotID = -1 or LOT.ltTypeLotID = @typeLotID)
+		AND (@gradeLotID = -1 or LOT.ltGradeLotID = @gradeLotID)
+		--AND (@emplacementID = -1 or M.mvEmplacementID = null or M.mvEmplacementID = @emplacementID)
+		--AND (@datedebut  is null or CAST(M.mvDate as Date) >= CAST(@datedebut as Date))
+		--(@magasinID = -1 or M.mvMagasinID = @magasinID)
+		--(@magasinID = '' or M.mvMagasinID in (select * from STRING_SPLIT(MagasinID, ',')))
+		
+	GROUP BY 
+		MG.maID
+		,MG.maDesignation
+		,M.mvReference2
+		,M.mvExportateurID 
+		,Ex.exNom	
+		,LOT.ltProduitID 
+		,P.prDesignation 
+		,LOT.ltCertificationID 
+		,CE.ceDesignation 
+		,LOT.ltGradeLotID 
+		,GR.grDesignation 
+		,LOT.ltTypeLotID 
+		,LT.ltDesignation
+		, LOT.ltID
+	HAVING (sum(isnull(M.mvQuantite,0) * mvSens) > 0)	
+	--HAVING (sum(mvSens) > 0)	
+
+	--;with _stock as(
+
+	--SELECT 		
+		
+	--	 1 ElementTypeID	
+	--	,'A' as ElementTypeDesignation
+	--	,MG.maID MagasinID
+	--	,MG.maDesignation MagasinNom
+	--	--,TS.teDesignation as ElementTypeDesignation
+	--	,M.mvReference2	Reference
+	--	,M.mvExportateurID ExportateurID 
+	--	,Ex.exNom ExportateurNom
+	--	,M.mvQuantite as Quantite
+	--	--,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+	--	,M.mvPoidsBrut PoidsBrut
+	--	,M.mvTareSacs TareSacs
+	--	,M.mvTarePalettes TarePalettes
+	--	,M.mvPoidsNetLivre PoidsNetLivre
+	--	,M.mvRetention RetentionPoids
+	--	,M.mvPoidsNetAccepte PoidsNetAccepte
+	--	--,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+	--	----,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+	--	--,sum(ISNULL(M.mvPoidsBrut,0) * mvSens) PoidsBrut
+	--	--,sum(isnull(M.mvTareSacs,0) * mvSens) TareSacs
+	--	--,sum(ISNULL(M.mvTarePalettes,0) * mvSens) TarePalettes
+	--	--,sum(isnull(M.mvPoidsNetLivre,0) * mvSens) PoidsNetLivre
+	--	--,sum(isnull(M.mvRetention,0) * mvSens) RetentionPoids
+	--	--,sum(ISNULL(M.mvPoidsNetAccepte,0) * mvSens) PoidsNetAccepte	
+	--	,LOT.ltProduitID ProduitID
+	--	,P.prDesignation LibelleProduit
+	--	,LOT.ltCertificationID CertificationID
+	--	,CE.ceDesignation NomCertification
+	--	,LOT.ltGradeLotID GradeLotID
+	--	,GR.grDesignation LibelleGradeLot
+	--	,LOT.ltTypeLotID TypeLotID	
+	--	,LT.ltDesignation LibelleTypeLot
+	--	,mvSens Sens
+	--	--,TS.teDesignation mouvement
+	--FROM dbo.V2_MouvementStock M inner join dbo.V2_MouvementStockType T on M.mvMouvementTypeID = T.mtID
+	--	inner join dbo.V2_Magasin MG on MG.maID = M.mvMagasinID
+	--	inner join dbo.V2_TypeElementStock TS on TS.teID = M.mvObjetEnStockType		
+	--	inner join dbo.Exportateur Ex on Ex.exID = M.mvExportateurID
+	--	inner join dbo.V2_Lot LOT on LOT.ltID = M.mvObjetEnStockID
+	--	left join dbo.Produit P on P.prID = LOT.ltProduitID
+	--	left join dbo.Certification CE on CE.ceID = LOT.ltCertificationID
+	--	left join dbo.V6_GradeLot GR on GR.grID = LOT.ltGradeLotID
+	--	left join dbo.V2_LotType LT on LT.ltID = LOT.ltTypeLotID
+	--	--left join dbo.BonDeLivraison BL on BL.blID = M.mvObjetEnStockID
+	--	--left join dbo.Livraison L on L.lvID = BL.blDeliveryID
+	--	cross join dbo.Parametres PR
+	--WHERE 	
+	--	(@magasinID = '' or M.mvMagasinID in (select * from dbo.SimpleSplitFunction(@magasinID,',')))
+	--	AND (@campagneID = '{Toute}' or M.mvCampagneID = @campagneID)
+	--	--AND (@exportateurID = -1 or M.mvExportateurID = @exportateurID)
+	--	AND (T.mtID in (12,30,31,9,24,32)) 
+	--	AND (@datefin is null or CAST(M.mvDate as Date) <= CAST(@datefin as Date))
+	--	AND (M.mvStatut = 'AP' )	
+	--	AND (LOT.ltStockMagasinID Is null or (LOT.ltStockMagasinID is not null and LOT.ltStockMagasinID <> 3 ))
+	--	--AND M.mvMagasinID <> 3
+	--	AND (@siteID = -1 or M.mvSiteID = @siteID)
+	--	AND (@produitID = -1 or M.mvProduitID = @produitID)
+	--	AND (@certificationID = -1 or LOT.ltCertificationID = @certificationID)
+	--	AND (@typeLotID = -1 or LOT.ltTypeLotID = @typeLotID)
+	--	AND (@gradeLotID = -1 or LOT.ltGradeLotID = @gradeLotID)
+	--	--AND (@emplacementID = -1 or M.mvEmplacementID = null or M.mvEmplacementID = @emplacementID)
+	--	--AND (@datedebut  is null or CAST(M.mvDate as Date) >= CAST(@datedebut as Date))
+	--	--(@magasinID = -1 or M.mvMagasinID = @magasinID)
+	--	--(@magasinID = '' or M.mvMagasinID in (select * from STRING_SPLIT(MagasinID, ',')))
+			
+	--union all
+	--SELECT 		
+		
+	--	 1 ElementTypeID	
+	--	,'A' as ElementTypeDesignation
+	--	,MG.maID MagasinID
+	--	,MG.maDesignation MagasinNom
+	--	--,TS.teDesignation as ElementTypeDesignation
+	--	,M.mvReference2	Reference
+	--	,M.mvExportateurID ExportateurID 
+	--	,Ex.exNom ExportateurNom
+	--	,M.mvQuantite as Quantite
+	--	--,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+	--	,M.mvPoidsBrut PoidsBrut
+	--	,M.mvTareSacs TareSacs
+	--	,M.mvTarePalettes TarePalettes
+	--	,M.mvPoidsNetLivre PoidsNetLivre
+	--	,M.mvRetention RetentionPoids
+	--	,M.mvPoidsNetAccepte PoidsNetAccepte
+	--	--,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+	--	----,sum(isnull(M.mvQuantite,0) * mvSens) as Quantite
+	--	--,sum(ISNULL(M.mvPoidsBrut,0) * mvSens) PoidsBrut
+	--	--,sum(isnull(M.mvTareSacs,0) * mvSens) TareSacs
+	--	--,sum(ISNULL(M.mvTarePalettes,0) * mvSens) TarePalettes
+	--	--,sum(isnull(M.mvPoidsNetLivre,0) * mvSens) PoidsNetLivre
+	--	--,sum(isnull(M.mvRetention,0) * mvSens) RetentionPoids
+	--	--,sum(ISNULL(M.mvPoidsNetAccepte,0) * mvSens) PoidsNetAccepte	
+	--	,LOT.ltProduitID ProduitID
+	--	,P.prDesignation LibelleProduit
+	--	,LOT.ltCertificationID CertificationID
+	--	,CE.ceDesignation NomCertification
+	--	,LOT.ltGradeLotID GradeLotID
+	--	,GR.grDesignation LibelleGradeLot
+	--	,LOT.ltTypeLotID TypeLotID	
+	--	,LT.ltDesignation LibelleTypeLot
+	--	,mvSens Sens
+	--	--,TS.teDesignation mouvement
+	--FROM dbo.V2_MouvementStock M inner join dbo.V2_MouvementStockType T on M.mvMouvementTypeID = T.mtID
+	--	inner join dbo.V2_Magasin MG on MG.maID = M.mvMagasinID
+	--	inner join dbo.V2_TypeElementStock TS on TS.teID = M.mvObjetEnStockType		
+	--	inner join dbo.Exportateur Ex on Ex.exID = M.mvExportateurID
+	--	inner join dbo.V5_Transfert_Lot tlot on tlot.tfID = M.mvObjetEnStockID
+	--	inner join dbo.V2_Lot LOT on LOT.ltID = tlot.tfLotID
+	--	left join dbo.Produit P on P.prID = LOT.ltProduitID
+	--	left join dbo.Certification CE on CE.ceID = LOT.ltCertificationID
+	--	left join dbo.V6_GradeLot GR on GR.grID = LOT.ltGradeLotID
+	--	left join dbo.V2_LotType LT on LT.ltID = LOT.ltTypeLotID
+	--	--left join dbo.BonDeLivraison BL on BL.blID = M.mvObjetEnStockID
+	--	--left join dbo.Livraison L on L.lvID = BL.blDeliveryID
+	--	cross join dbo.Parametres PR
+	--WHERE 	
+	--	(@magasinID = '' or M.mvMagasinID in (select * from dbo.SimpleSplitFunction(@magasinID,',')))
+	--	AND (@campagneID = '{Toute}' or M.mvCampagneID = @campagneID)
+	--	--AND (@exportateurID = -1 or M.mvExportateurID = @exportateurID)
+	--	AND (T.mtID in (12,30,31,9,24,32)) 
+	--	AND (@datefin is null or CAST(M.mvDate as Date) <= CAST(@datefin as Date))
+	--	AND (M.mvStatut = 'AP' )	
+	--	AND (LOT.ltStockMagasinID Is null or (LOT.ltStockMagasinID is not null and LOT.ltStockMagasinID <> 3 ))
+	--	--AND M.mvMagasinID <> 3
+	--	AND (@siteID = -1 or M.mvSiteID = @siteID)
+	--	AND (@produitID = -1 or M.mvProduitID = @produitID)
+	--	AND (@certificationID = -1 or LOT.ltCertificationID = @certificationID)
+	--	AND (@typeLotID = -1 or LOT.ltTypeLotID = @typeLotID)
+	--	AND (@gradeLotID = -1 or LOT.ltGradeLotID = @gradeLotID)
+	--	--AND (@emplacementID = -1 or M.mvEmplacementID = null or M.mvEmplacementID = @emplacementID)
+	--	--AND (@datedebut  is null or CAST(M.mvDate as Date) >= CAST(@datedebut as Date))
+	--	--(@magasinID = -1 or M.mvMagasinID = @magasinID)
+	--	--(@magasinID = '' or M.mvMagasinID in (select * from STRING_SPLIT(MagasinID, ',')))
+		
+	----GROUP BY 
+	----	MG.maID
+	----	,MG.maDesignation
+	----	,M.mvReference2
+	----	,M.mvExportateurID 
+	----	,Ex.exNom	
+	----	,LOT.ltProduitID 
+	----	,P.prDesignation 
+	----	,LOT.ltCertificationID 
+	----	,CE.ceDesignation 
+	----	,LOT.ltGradeLotID 
+	----	,GR.grDesignation 
+	----	,LOT.ltTypeLotID 
+	----	,LT.ltDesignation
+	----HAVING (sum(isnull(M.mvQuantite,0) * mvSens) > 0)	
+	----HAVING (sum(mvSens) > 0)	
+	--)
+	--select 
+	
+	--	 ElementTypeID	
+	--	, ElementTypeDesignation
+	--	, MagasinID
+	--	, MagasinNom
+	--	--,TS.teDesignation as ElementTypeDesignation
+	--	, Reference
+	--	, ExportateurID 
+	--	, ExportateurNom		
+	--	,sum(isnull(Quantite,0) * Sens) as Quantite
+	--	--,sum(isnull(Quantite,0) * mvSens) as Quantite
+	--	,sum(ISNULL(PoidsBrut,0) * Sens) PoidsBrut
+	--	,sum(isnull(TareSacs,0) * Sens) TareSacs
+	--	,sum(ISNULL(TarePalettes,0) * Sens) TarePalettes
+	--	,sum(isnull(PoidsNetLivre,0) * Sens) PoidsNetLivre
+	--	,sum(isnull(RetentionPoids,0) * Sens) RetentionPoids
+	--	,sum(ISNULL(PoidsNetAccepte,0) * Sens) PoidsNetAccepte	
+	--	, ProduitID
+	--	, LibelleProduit
+	--	, CertificationID
+	--	, NomCertification
+	--	, GradeLotID
+	--	, LibelleGradeLot
+	--	, TypeLotID	
+	--	, LibelleTypeLot		
+	
+	--from _stock
+	--group by 
+	--	  MagasinID
+	--	, MagasinNom
+	--	, Reference
+	--	, ExportateurID
+	--	, ExportateurNom
+	--	, ProduitID
+	--	, LibelleProduit
+	--	, CertificationID
+	--	, NomCertification
+	--	, GradeLotID
+	--	, LibelleGradeLot
+	--	, TypeLotID
+	--	, LibelleTypeLot
+	--	, ElementTypeID
+	--	, ElementTypeDesignation
+	--having (sum(Sens) > 0)	
+
+	
+END
+GO
+
+
+
+
+
+USE [DigitalFlow.tnci]
+GO
+
+/****** Object:  StoredProcedure [dbo].[V5_Transfert_Lot_New_Mobil]    Script Date: 10/7/2025 12:38:31 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		Dominique Otchoumou
+-- Create date: 2025-10-07
+-- Description: GESTION DE TRANSFERT DE LOT AVEC  PRIS EN COMPTE DES TRANSFERT PARTIEL
+--              Vérifie d'abord l'existence du lot avant de
+--              valider la quantité en stock.
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[V5_Transfert_Lot_New_Mobil]
+	@ID uniqueidentifier OUTPUT, 
+	@numeroExpedition varchar(10) OUTPUT, 
+	@RowVersion Timestamp OUTPUT,
+    @ErrorMessage varchar(1000) OUTPUT, 
+    @campagneID char(9), 
+    @siteID int,
+    @LotID uniqueidentifier, 
+    @NumBordereauExpedition varchar(50), 
+    @magasinExpeditionID int,
+    @modeTransfertID int, 
+    @typeOperationID int, 
+    @nombreSacs int,
+    @NombrePalette int, 
+    @TareSac decimal(18,5), 
+    @TarePalette decimal(18,5),
+    @poidsBrut decimal(18,5), 
+    @poidsNet decimal(18,5) = 0, 
+    @ImmTracteur varchar(50),
+    @ImmRemorque varchar(50),
+    @dateExpedition datetime, 
+    @Commentaire varchar(max),
+    @statut char(2) = 'NA', 
+    @magasinTheoReceptionID int, 
+    @CreationUser varchar(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+	BEGIN TRANSACTION;
+
+	-- 1. Validations initiales (inchangé)
+	IF (@magasinExpeditionID = @magasinTheoReceptionID AND @typeOperationID = 1)
+    BEGIN
+        SET @ErrorMessage = 'Erreur : Le magasin d''expédition et de réception ne peuvent pas être identiques pour un transfert.';
+		ROLLBACK TRANSACTION; RETURN -1;
+    END
+
+    -- 2. Recherche dynamique des ID de configuration (inchangé)
+    DECLARE @MouvementTypeID int, @ObjetEnStockTypeID int;
+    IF @typeOperationID = 2 SET @MouvementTypeID = (SELECT mtID FROM dbo.V2_MouvementStockType WHERE mtDesignation = 'Sortie Empotage');
+    ELSE SET @MouvementTypeID = (SELECT mtID FROM dbo.V2_MouvementStockType WHERE mtDesignation = 'Expedition de Lot');
+    SET @ObjetEnStockTypeID = (SELECT teID FROM dbo.V2_TypeElementStock WHERE teDesignation = 'Lot');
+
+    IF @MouvementTypeID IS NULL BEGIN SET @ErrorMessage = 'Erreur de configuration : Type de mouvement introuvable.'; ROLLBACK TRANSACTION; RETURN -1; END
+    IF @ObjetEnStockTypeID IS NULL BEGIN SET @ErrorMessage = 'Erreur de configuration : Type d''élément ''Lot'' introuvable.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	-- 3. Création de l'enregistrement de Transfert (inchangé)
+    SET @ID = NEWID();
+	Declare @Newnumero char(8), @IndexCampagne char(2) = SUBSTRING(@campagneID, 3, 2), @prefixeEx char(2) = 'VT';
+	Declare @LastNum int = ISNULL((SELECT TOP 1 CAST(SUBSTRING(tfNumeroExpedition, 5, 4) AS INT) FROM dbo.V5_Transfert_Lot WHERE SUBSTRING(tfNumeroExpedition, 1, 2) = @IndexCampagne ORDER BY tfNumeroExpedition DESC), 0);
+	Set @Newnumero = @IndexCampagne + @prefixeEx + RIGHT('0000' + CAST(@LastNum + 1 AS varchar(4)), 4);
+    Set @numeroExpedition = @Newnumero;
+
+    INSERT INTO dbo.V5_Transfert_Lot (tfID, tfCampagneID, tfSiteID, tfLotID, tfNumeroExpedition, tfNumBordereauExpedition, tfMagasinExpeditionID, tfNombreSacsExpedition, tfNombrePaletteExpedition, tfTareSacsExpedition, tfTarePaletteExpedition, tfPoidsBrutExpedition, tfPoidsNetExpedition, tfImmTracteurExpedition, tfImmRemorqueExpedition, tfDateExpedition, tfCommentaireExpedition, tfStatut, tfCreationUtilisateur, tfCreationDate, tfMagReceptionTheo, tfModeTransfertID, tfTypeOperationID)
+    VALUES (@ID, @campagneID, @siteID, @LotID, @Newnumero, @NumBordereauExpedition, @magasinExpeditionID, @nombreSacs, @NombrePalette, @TareSac, @TarePalette, @poidsBrut, @poidsNet, @ImmTracteur, @ImmRemorque, @dateExpedition, @Commentaire, @statut, @CreationUser, GETDATE(), @magasinTheoReceptionID, @modeTransfertID, @typeOperationID);
+	IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la création du transfert.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	-- 4. Mise à jour du lot d'origine
+	IF @modeTransfertID = 2 -- Transfert PARTIEL
+	BEGIN
+        -- ======================== CORRECTION APPLIQUÉE ICI ========================
+        DECLARE @StockSacsActuel int;
+        SELECT @StockSacsActuel = ltNombreSacs FROM dbo.V2_Lot WHERE ltID = @LotID;
+
+        -- Étape 1: Vérifier si le lot existe. Si @StockSacsActuel est NULL, le lot n'a pas été trouvé.
+        IF @StockSacsActuel IS NULL
+        BEGIN
+            SET @ErrorMessage = 'Erreur : Le lot avec l''ID spécifié est introuvable.';
+            ROLLBACK TRANSACTION; RETURN -1;
+        END
+
+        -- Étape 2: Si le lot existe, vérifier la quantité.
+        IF @StockSacsActuel < @nombreSacs
+        BEGIN
+            SET @ErrorMessage = 'Quantité insuffisante en stock. Disponible : ' + CAST(@StockSacsActuel AS varchar) + ', Demandé : ' + CAST(@nombreSacs AS varchar) + '.';
+            ROLLBACK TRANSACTION; RETURN -1;
+        END
+        -- =========================================================================
+
+		UPDATE dbo.V2_Lot SET ltNombreSacs = ltNombreSacs - @nombreSacs, ltPoidsNet = ltPoidsNet - @poidsNet, ltPoidsBrut = ltPoidsBrut - @poidsBrut, ltTareSacs = ltTareSacs - @TareSac, ltTarePalettes = ltTarePalettes - @TarePalette, ltModificationUtilisateur = @CreationUser, ltModificationDate = GETDATE() WHERE ltID = @LotID;
+		IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la mise à jour des quantités du lot (partiel).'; ROLLBACK TRANSACTION; RETURN -1; END
+	END
+	ELSE IF @modeTransfertID = 1 -- Transfert TOTAL
+	BEGIN
+		DECLARE @NewStockMagasinID int;
+		IF @typeOperationID = 3 SET @NewStockMagasinID = -2; ELSE SET @NewStockMagasinID = 3;
+		UPDATE dbo.V2_Lot SET ltStockMagasinID = @NewStockMagasinID, ltModificationUtilisateur = @CreationUser, ltModificationDate = GETDATE() WHERE ltID = @LotID;
+		IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la mise à jour du statut du lot (total).'; ROLLBACK TRANSACTION; RETURN -1; END
+	END
+
+	-- 5. CRÉATION DU MOUVEMENT DE SORTIE DE STOCK (inchangé)
+	INSERT INTO dbo.V2_MouvementStock (mvID, mvMagasinID, mvCampagneID, mvExportateurID, mvCertificationID, mvDate, mvSens, mvMouvementTypeID, mvObjetEnStockID, mvObjetEnStockType, mvQuantite, mvStatut, mvReference1, mvReference2, mvPoidsBrut, mvTareSacs, mvTarePalettes, mvPoidsNetLivre, mvRetention, mvPoidsNetAccepte, mvCreationUtilisateur, mvCreationDate, mvEmplacementID, mvEmballageTypeID, mvCommentaire, mvSiteID, mvProduitID, mvLotID)
+	SELECT NEWID(), @magasinExpeditionID, @campagneID, _l.ltExportateurID, _l.ltCertificationID, @dateExpedition, -1, @MouvementTypeID, @ID, @ObjetEnStockTypeID, @nombreSacs, 'AP', _l.ltNumeroLot, @NumBordereauExpedition, ISNULL(@poidsBrut, 0), ISNULL(@TareSac, 0), ISNULL(@TarePalette, 0), ISNULL(@poidsNet, 0), 0, ISNULL(@poidsNet, 0), @CreationUser, GETDATE(), 1, _l.ltTypeEmballageID, @Commentaire, @siteID, _l.ltProduitID, @LotID
+	FROM dbo.V2_Lot _l WHERE _l.ltID = @LotID;
+	IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la création de la transaction de sortie de stock.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	COMMIT TRANSACTION;
+    SET @RowVersion = @@DBTS;
+	SET @ErrorMessage = NULL;
+    RETURN 0;
+END
+
+GO
+
+
+
+
+
+
+
+USE [DigitalFlow.tnci]
+GO
+
+/****** Object:  StoredProcedure [dbo].[V5_Transfert_Lot_Select_mobil]    Script Date: 10/7/2025 12:39:10 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:      <Votre Nom>
+-- Create date: 2025-10-06
+-- Description: [VERSION FINALE ET ROBUSTE]
+--              Sélectionne les transferts de lots. Utilise les noms de table corrects.
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[V5_Transfert_Lot_Select_mobil]
+    @CropYear char(9),
+    @StartDate datetime = NULL,
+    @EndDate datetime = NULL,
+    @siteID int,
+    @ExportateurID int,
+    @statut char(2) = '-1',
+    @MagasinExpeditionID int,
+    @MagasinReceptionID int,
+    @EnTransit bit = 0
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @EnTransit = 1
+    BEGIN
+        SELECT
+            tf.tfID AS ID, tf.tfCampagneID AS CampagneID, tf.tfSiteID AS SiteID, _site.siNom AS SiteNom, -- Colonne corrigée
+            tf.tfLotID AS LotID, _lot.ltNumeroLot AS NumeroLot, _lot.ltExportateurID AS ExportateurID,
+            _exp.exNom AS ExportateurNom, tf.tfNumeroExpedition AS NumeroExpedition, tf.tfNumBordereauExpedition AS NumBordereauExpedition,
+            tf.tfMagasinExpeditionID AS MagasinExpeditionID, _magExp.maDesignation AS MagasinExpeditionNom,
+            tf.tfNombreSacsExpedition AS NombreSacsExpedition, tf.tfNombrePaletteExpedition AS NombrePaletteExpedition,
+            tf.tfPoidsNetExpedition AS PoidsNetExpedition, tf.tfDateExpedition AS DateExpedition, tf.tfDateReception AS DateReception,
+            tf.tfMagasinReceptionID AS MagasinReceptionID, _magRec.maDesignation AS MagasinReceptionNom,
+            tf.tfNombreSacsReception AS NombreSacsReception, tf.tfPoidsNetReception AS PoidsNetReception,
+            tf.tfStatut AS Statut, tf.tfCreationUtilisateur AS CreationUtilisateur, tf.tfCreationDate AS CreationDate,
+            tf.tfModificationUtilisateur AS ModificationUtilisateur, tf.tfModificationDate AS ModificationDate,
+            tf.tfRowVersion AS RowVersionKey, tf.tfMagReceptionTheo AS MagReceptionTheoID,
+            _magTheo.maDesignation AS MagReceptionTheoNom, tf.tfTypeOperationID AS TypeOperationID, tf.tfModeTransfertID AS ModeTransfertID
+        FROM dbo.V5_Transfert_Lot tf
+        LEFT JOIN dbo.V2_Lot _lot ON tf.tfLotID = _lot.ltID
+        LEFT JOIN dbo.Exportateur _exp ON _lot.ltExportateurID = _exp.exID
+        -- CORRECTION: Utilisation du nom de table et de colonne corrects
+        LEFT JOIN dbo.Site _site ON tf.tfSiteID = _site.siID
+        LEFT JOIN dbo.V2_Magasin _magExp ON tf.tfMagasinExpeditionID = _magExp.maID
+        LEFT JOIN dbo.V2_Magasin _magRec ON tf.tfMagasinReceptionID = _magRec.maID
+        LEFT JOIN dbo.V2_Magasin _magTheo ON tf.tfMagReceptionTheo = _magTheo.maID
+        WHERE
+            tf.tfMagReceptionTheo = @MagasinReceptionID
+            AND tf.tfStatut = 'NA'
+            AND (tf.tfDesactive IS NULL OR tf.tfDesactive = 0)
+        ORDER BY
+            tf.tfDateExpedition DESC;
+    END
+    ELSE
+    BEGIN
+        SELECT
+            tf.tfID AS ID, tf.tfCampagneID AS CampagneID, tf.tfSiteID AS SiteID, _site.siNom AS SiteNom, -- Colonne corrigée
+            tf.tfLotID AS LotID, _lot.ltNumeroLot AS NumeroLot, _lot.ltExportateurID AS ExportateurID,
+            _exp.exNom AS ExportateurNom, tf.tfNumeroExpedition AS NumeroExpedition, tf.tfNumBordereauExpedition AS NumBordereauExpedition,
+            tf.tfMagasinExpeditionID AS MagasinExpeditionID, _magExp.maDesignation AS MagasinExpeditionNom,
+            tf.tfNombreSacsExpedition AS NombreSacsExpedition, tf.tfNombrePaletteExpedition AS NombrePaletteExpedition,
+            tf.tfPoidsNetExpedition AS PoidsNetExpedition, tf.tfDateExpedition AS DateExpedition, tf.tfDateReception AS DateReception,
+            tf.tfMagasinReceptionID AS MagasinReceptionID, _magRec.maDesignation AS MagasinReceptionNom,
+            tf.tfNombreSacsReception AS NombreSacsReception, tf.tfPoidsNetReception AS PoidsNetReception,
+            tf.tfStatut AS Statut, tf.tfCreationUtilisateur AS CreationUtilisateur, tf.tfCreationDate AS CreationDate,
+            tf.tfModificationUtilisateur AS ModificationUtilisateur, tf.tfModificationDate AS ModificationDate,
+            tf.tfRowVersion AS RowVersionKey, tf.tfMagReceptionTheo AS MagReceptionTheoID,
+            _magTheo.maDesignation AS MagReceptionTheoNom, tf.tfTypeOperationID AS TypeOperationID, tf.tfModeTransfertID AS ModeTransfertID
+        FROM dbo.V5_Transfert_Lot tf
+        LEFT JOIN dbo.V2_Lot _lot ON tf.tfLotID = _lot.ltID
+        LEFT JOIN dbo.Exportateur _exp ON _lot.ltExportateurID = _exp.exID
+        -- CORRECTION: Utilisation du nom de table et de colonne corrects
+        LEFT JOIN dbo.Site _site ON tf.tfSiteID = _site.siID
+        LEFT JOIN dbo.V2_Magasin _magExp ON tf.tfMagasinExpeditionID = _magExp.maID
+        LEFT JOIN dbo.V2_Magasin _magRec ON tf.tfMagasinReceptionID = _magRec.maID
+        LEFT JOIN dbo.V2_Magasin _magTheo ON tf.tfMagReceptionTheo = _magTheo.maID
+        WHERE
+            (tf.tfDesactive IS NULL OR tf.tfDesactive = 0)
+            AND (@CropYear = '{Tous}' OR tf.tfCampagneID = @CropYear)
+            AND (@siteID = -1 OR tf.tfSiteID = @siteID)
+            AND (@ExportateurID = -1 OR _lot.ltExportateurID = @ExportateurID)
+            AND (@MagasinExpeditionID = -1 OR tf.tfMagasinExpeditionID = @MagasinExpeditionID)
+            AND (@StartDate IS NULL OR tf.tfDateExpedition >= @StartDate)
+            AND (@EndDate IS NULL OR tf.tfDateExpedition <= @EndDate)
+            AND (@statut = '-1' OR tf.tfStatut = @statut)
+        ORDER BY
+            tf.tfDateExpedition DESC;
+    END
+END
+
+GO
+
+
+
+
+
+USE [DigitalFlow.tnci]
+GO
+
+/****** Object:  StoredProcedure [dbo].[V5_TransfertLot_Reception_Modify_mobil]    Script Date: 10/7/2025 12:39:29 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE OR ALTER PROCEDURE [dbo].[V5_TransfertLot_Reception_Modify_mobil]
+	@ID uniqueidentifier,
+	@dateReception datetime,
+	@destinationID int,
+	@ModificationUser varchar(50),
+	@ImmTracteurRec varchar(50) = NULL,
+    @ImmRemorqueRec varchar(50) = NULL,
+    @numBordereauRec varchar(50) = NULL,
+	@CommentaireRec varchar(max) = NULL,
+	@statut char(2) = 'AP',
+	@nombresac int,
+	@nombrepalette int,
+	@poidsNetRecu decimal(18,5) = 0,
+	@tareSacRecu decimal(18,5) = 0,
+	@poidsbrut decimal(18,5) = 0,
+	@TarePaletteArrive decimal(18,5) = 0,
+	@RowVersion Timestamp OUTPUT,
+    @ErrorMessage varchar(1000) OUTPUT
+AS
+BEGIN
+	SET NOCOUNT ON;
+	BEGIN TRANSACTION;
+
+	-- 1. Validations
+	IF NOT EXISTS (SELECT 1 FROM dbo.V5_Transfert_Lot WHERE tfID = @ID) BEGIN SET @ErrorMessage = 'Échec : Le transfert est introuvable.'; ROLLBACK TRANSACTION; RETURN -1; END
+	IF (SELECT tfRowVersion FROM dbo.V5_Transfert_Lot WHERE tfID = @ID) <> @RowVersion BEGIN SET @ErrorMessage = 'Échec : Le lot a été modifié. Veuillez actualiser.'; ROLLBACK TRANSACTION; RETURN -1; END
+	IF (SELECT tfStatut FROM dbo.V5_Transfert_Lot WHERE tfID = @ID) = 'RE' BEGIN SET @ErrorMessage = 'Échec : Réception déjà effectuée. Veuillez actualiser.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	-- 2. Mise à jour du Transfert (V5_Transfert_Lot)
+	UPDATE [dbo].V5_Transfert_Lot
+    SET tfDateReception = @dateReception, tfMagasinReceptionID = @destinationID, tfPoidsBrutReception = @poidsbrut, tfPoidsNetReception = @poidsNetRecu,
+        tfModificationUtilisateur = @ModificationUser, tfModificationDate = GETDATE(), tfStatut = 'RE', tfTareSacsReception = @tareSacRecu,
+	    tfNombreSacsReception = @nombresac, tfNombrePaletteReception = @nombrepalette, tfTarePaletteReception = @TarePaletteArrive, tfNumBordereauReception = @numBordereauRec,
+	    tfImmTracteurReception = @ImmTracteurRec, tfImmRemorqueReception = @ImmRemorqueRec, tfCommentaireReception = @CommentaireRec
+	WHERE tfID = @ID;
+
+	IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la mise à jour du transfert.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	-- 3. Mise à jour du Lot (V2_Lot)
+    UPDATE dbo.V2_Lot
+    SET ltStockMagasinID = @destinationID, ltStockNombreSacs = @nombresac, ltStockNombrePalette = @nombrepalette, ltStockPoidsBrut = @poidsbrut,
+        ltStockTareSacs = @tareSacRecu, ltStockTarePalettes = @TarePaletteArrive, ltStockPoidsNet = @poidsNetRecu
+	FROM dbo.V5_Transfert_Lot _v
+    WHERE _v.tfID = @ID AND dbo.V2_Lot.ltID = _v.tfLotID;
+
+	IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la mise à jour du stock sur le lot.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	-- 4. CRÉATION DU MOUVEMENT D'ENTRÉE EN STOCK (BLOC RÉACTIVÉ ET CORRIGÉ)
+	INSERT INTO dbo.V2_MouvementStock (
+		mvID, mvMagasinID, mvCampagneID, mvExportateurID, mvCertificationID,
+		mvDate, mvSens, mvMouvementTypeID, mvObjetEnStockID, mvObjetEnStockType,
+		mvQuantite, mvStatut, mvReference1, mvReference2, mvPoidsBrut,
+		mvTareSacs, mvTarePalettes, mvPoidsNetLivre, mvRetention, mvPoidsNetAccepte,
+		mvCreationUtilisateur, mvCreationDate, mvEmplacementID, mvEmballageTypeID,
+		mvCommentaire, mvSiteID, mvProduitID, mvLotID
+	)
+	SELECT
+		NEWID(),
+		@destinationID,
+		_v.tfCampagneID,
+		_l.ltExportateurID,
+		_l.ltCertificationID,
+		@dateReception,
+		1, -- sens (Entrée)
+		31, -- mouvementTypeId (Reception de Lot)
+		@ID, -- CORRECTION APPLIQUÉE ICI : On lie le mouvement à l'ID du TRANSFERT.
+		1, -- objectEnStockType (Lot)
+		@nombresac,
+		'AP', -- statut
+		_l.ltNumeroLot,
+		@numBordereauRec,
+		ISNULL(@poidsbrut, 0),
+		ISNULL(@tareSacRecu, 0),
+		ISNULL(@TarePaletteArrive, 0),
+		ISNULL(@poidsNetRecu, 0),
+		0, -- retention
+		ISNULL(@poidsNetRecu, 0),
+		@ModificationUser,
+		GETDATE(),
+		1, -- EmplacementID
+		_l.ltTypeEmballageID,
+		@CommentaireRec,
+		_v.tfSiteID,
+		_l.ltProduitID,
+		_v.tfLotID
+	FROM dbo.V5_Transfert_Lot _v
+	INNER JOIN dbo.V2_Lot _l ON _v.tfLotID = _l.ltID
+	WHERE _v.tfID = @ID;
+
+	IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la création de la transaction de stock.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+	COMMIT TRANSACTION;
+
+	-- 5. Succès
+    SET @RowVersion = (SELECT tfRowVersion FROM dbo.V5_Transfert_Lot WHERE tfID = @ID);
+	SET @ErrorMessage = NULL;
+    RETURN 0;
+END
+GO
+
+
+
+
+
+
+
+USE [DigitalFlow.tnci]
+GO
+
+/****** Object:  StoredProcedure [dbo].[V5_TransfertLot_Reception_Partielle_NewLot_Mobil]    Script Date: 10/7/2025 12:39:54 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:      <Dominique Otchoumou>
+-- Create date: 2025-10-06
+-- Description: [Gestion des transfert partiel]
+--              Approuve le lot créé et alimente
+--              les colonnes de stock logiquement.
+-- =============================================
+CREATE OR ALTER PROCEDURE [dbo].[V5_TransfertLot_Reception_Partielle_NewLot_Mobil]
+    @TransfertID uniqueidentifier,
+    @dateReception datetime,
+    @destinationID int,
+    @ModificationUser varchar(50),
+    @ErrorMessage varchar(1000) OUTPUT,
+    @NewLotID uniqueidentifier OUTPUT,
+    @RowVersion timestamp OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRANSACTION;
+
+    -- 1. Déclarations (inchangé)
+    DECLARE @LotParentID uniqueidentifier, @campagneID char(9), @siteID int, @exportateurID int,
+            @certificationID int, @produitID int, @typeLotID int, @gradeLotID int, @typeEmballageID int,
+            @nombreSacs int, @nombrePalettes int, @poidsNet decimal(18,5), @poidsBrut decimal(18,5),
+            @tareSacs decimal(18,5), @tarePalettes decimal(18,5), @numeroLotParent varchar(50),
+            @MouvementTypeID int, @ObjetEnStockTypeID int;
+
+    -- 2. Récupérer les informations du transfert et du lot parent (inchangé)
+    SELECT
+        @LotParentID = tf.tfLotID, @campagneID = tf.tfCampagneID, @siteID = tf.tfSiteID,
+        @nombreSacs = tf.tfNombreSacsExpedition, @nombrePalettes = tf.tfNombrePaletteExpedition,
+        @poidsNet = tf.tfPoidsNetExpedition, @poidsBrut = tf.tfPoidsBrutExpedition,
+        @tareSacs = tf.tfTareSacsExpedition, @tarePalettes = tf.tfTarePaletteExpedition,
+        @exportateurID = lot.ltExportateurID, @certificationID = lot.ltCertificationID,
+        @produitID = lot.ltProduitID, @typeLotID = lot.ltTypeLotID,
+        @gradeLotID = lot.ltGradeLotID, @typeEmballageID = lot.ltTypeEmballageID,
+        @numeroLotParent = lot.ltNumeroLot
+    FROM dbo.V5_Transfert_Lot tf
+    INNER JOIN dbo.V2_Lot lot ON tf.tfLotID = lot.ltID
+    WHERE tf.tfID = @TransfertID;
+
+    IF @LotParentID IS NULL BEGIN SET @ErrorMessage = 'Transfert introuvable.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+    -- 3. Recherche dynamique et validation des ID (inchangé)
+    SELECT @MouvementTypeID = mtID FROM dbo.V2_MouvementStockType WHERE RTRIM(LTRIM(mtDesignation)) = 'Reception de Lot';
+    SELECT @ObjetEnStockTypeID = teID FROM dbo.V2_TypeElementStock WHERE RTRIM(LTRIM(teDesignation)) = 'Lot';
+
+    IF @MouvementTypeID IS NULL BEGIN SET @ErrorMessage = 'Erreur config: Type de mouvement ''Reception de Lot'' introuvable.'; ROLLBACK TRANSACTION; RETURN -1; END
+    IF @ObjetEnStockTypeID IS NULL BEGIN SET @ErrorMessage = 'Erreur config: Type d''élément ''Lot'' introuvable.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+    -- 4. Création du nouveau lot "enfant"
+    SET @NewLotID = NEWID();
+
+    INSERT INTO dbo.V2_Lot (
+        ltID, ltCampagneID, ltSiteID, ltProduitID, ltExportateurID, ltTypeLotID, ltCertificationID,
+        ltDate, ltNumeroLot, ltNombreSacs, ltNombrePalette, ltPoidsNet, ltPoidsBrut, ltTareSacs, ltTarePalettes,
+        ltStatut, ltStockMagasinID, ltCreationUtilisateur, ltCreationDate, ltGradeLotID, ltTypeEmballageID,
+        ltEstManuel, ltEstQueue, ltDesactive,
+        -- Ajout de l'approbation
+        ltIsApproved, ltDateApprobation,
+        -- Ajout des colonnes de stock
+        ltStockNombreSacs, ltStockNombrePalette, ltStockPoidsBrut, ltStockPoidsNet, ltStockTareSacs, ltStockTarePalettes
+    )
+    VALUES (
+        @NewLotID, @campagneID, @siteID, @produitID, @exportateurID, @typeLotID, @certificationID,
+        @dateReception, @numeroLotParent + '-P', @nombreSacs, @nombrePalettes, @poidsNet, @poidsBrut, @tareSacs, @tarePalettes,
+        'AP', @destinationID, @ModificationUser, GETDATE(), @gradeLotID, @typeEmballageID,
+        1, 0, 0,
+        -- Valeurs pour l'approbation
+        1, @dateReception,
+        -- Valeurs pour les colonnes de stock
+        @nombreSacs, @nombrePalettes, @poidsBrut, @poidsNet, @tareSacs, @tarePalettes
+    );
+    -- =========================================================================
+    IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la création du nouveau lot partiel.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+    -- 5. Création du mouvement de stock d'entrée (inchangé)
+    INSERT INTO dbo.V2_MouvementStock (
+        mvID, mvMagasinID, mvCampagneID, mvExportateurID, mvCertificationID, mvDate,
+        mvSens, mvMouvementTypeID, mvObjetEnStockID, mvObjetEnStockType, mvQuantite,
+        mvStatut, mvReference1, mvPoidsBrut, mvTareSacs, mvTarePalettes, mvPoidsNetLivre,
+        mvRetention, mvPoidsNetAccepte, mvCreationUtilisateur, mvCreationDate, mvEmplacementID,
+        mvProduitID, mvLotID
+    )
+    VALUES (
+        NEWID(), @destinationID, @campagneID, @exportateurID, @certificationID, @dateReception,
+        1, @MouvementTypeID, @NewLotID, @ObjetEnStockTypeID, @nombreSacs,
+        'AP', @numeroLotParent, @poidsBrut, @tareSacs, @tarePalettes, @poidsNet,
+        0, @poidsNet, @ModificationUser, GETDATE(), 1,
+        @produitID, @NewLotID
+    );
+    IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la création du mouvement de stock d''entrée.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+    -- 6. Mise à jour du statut du transfert (inchangé)
+    UPDATE dbo.V5_Transfert_Lot
+    SET
+        tfStatut = 'RE',
+        tfMagasinReceptionID = @destinationID,
+        tfDateReception = @dateReception,
+        tfModificationUtilisateur = @ModificationUser,
+        tfModificationDate = GETDATE()
+    WHERE tfID = @TransfertID;
+    IF @@ROWCOUNT <> 1 BEGIN SET @ErrorMessage = 'Erreur lors de la mise à jour du statut du transfert.'; ROLLBACK TRANSACTION; RETURN -1; END
+
+    COMMIT TRANSACTION;
+    SET @RowVersion = @@DBTS;
+    SET @ErrorMessage = NULL;
+    RETURN 0;
+END
+
+GO
+
+
