@@ -284,7 +284,7 @@ const localStyles = StyleSheet.create({
     // ## CORRECTION APPLIQUÉE ICI ##
     // Ce style garantit que le texte du Picker est visible.
     pickerText: {
-        color: Colors.dark, // ou '#000'
+        color: Colors.textDark, // ou '#000'
     },
 });
 
