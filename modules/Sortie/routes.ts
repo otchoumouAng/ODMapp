@@ -1,13 +1,11 @@
 import { api, handleNetworkError } from '../Shared/route';
 import { LotFilters } from '../Shared/components/Filtre';
-import { StockLot } from './type';
-import { Lot, TransfertDto } from './type';
-
-
+// Import des nouveaux types définis localement
+import { StockLot, TransfertDto, LotDetail } from './type';
 
 /**
  * Récupère la liste complète des lots disponibles pour une sortie.
- * L'endpoint /api/lot retourne un objet Lot plus détaillé.
+ * L'endpoint /api/stock/lots retourne un objet StockLot.
  */
 export const getStockLots = async (filters: LotFilters): Promise<StockLot[]> => {
     try {
@@ -30,15 +28,31 @@ export const getStockLots = async (filters: LotFilters): Promise<StockLot[]> => 
 };
 
 /**
+ * Récupère les détails complets d'un lot unique (notamment les tares).
+ * @param id Le GUID du lot à récupérer.
+ */
+export const getLotById = async (id: string): Promise<LotDetail> => {
+    try {
+        const response = await api.get(`/lot/${id}`);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error, `getLotById(${id})`);
+    }
+};
+
+/**
  * Crée une nouvelle sortie de lot (transfert).
- * @param transfertData L'objet contenant les données du transfert à envoyer.
+ * @param transfertData L'objet DTO contenant les données du transfert à envoyer.
  */
 export const createTransfert = async (transfertData: TransfertDto): Promise<any> => {
     try {
         // L'endpoint pour la création est /api/transfertlot (POST)
         const response = await api.post('/transfertlot', transfertData);
         return response.data;
-    } catch (error) {
-        throw handleNetworkError(error, 'createTransfert');
+    } catch (error: any) {
+        // Affiche l'erreur de validation de l'API (ex: "CampagneID is required")
+        const serverMessage = error.response?.data?.message || error.response?.data?.title || error.message;
+        throw new Error(serverMessage || "Une erreur inattendue est survenue lors de la création du transfert.");
     }
 };
+

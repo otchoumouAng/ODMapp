@@ -1,13 +1,16 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, Button, Alert, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { View, Text, Button, Alert, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import Toast from 'react-native-toast-message';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { TransfertLot } from '../Shared/type';
-import { ReceptionData } from './type';
+// --- MODIFICATION --- : Import des types locaux
+import { ReceptionData, DropdownItem } from './type';
 import { validerReception } from './routes';
-// Assurez-vous que le chemin vers votre nouveau composant est correct
+// --- MODIFICATION --- : Import du loader de types
+import { getMouvementStockTypes } from '../Shared/route';
 import CustomTextInput from '../Shared/components/CustomTextInput';
 
 const InfoRow = ({ label, value }: { label: string, value: any }) => (
@@ -18,12 +21,14 @@ const ReceptionScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { user } = useContext(AuthContext);
-    const { item } = route.params as { item: TransfertLot };
+    const { item } = route.params as { item: TransfertLot }; // 'item' est le TransfertLot
 
+    // --- États du formulaire ---
     const [numBordereau, setNumBordereau] = useState('');
     const [tracteur, setTracteur] = useState('');
     const [remorque, setRemorque] = useState('');
     const [commentaire, setCommentaire] = useState('');
+    // Pré-remplissage avec les données d'expédition
     const [nombreSacs, setNombreSacs] = useState(item.nombreSacsExpedition?.toString() ?? '');
     const [nombrePalettes, setNombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '');
     const [poidsBrut, setPoidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '');
@@ -32,16 +37,41 @@ const ReceptionScreen = () => {
     const [tarePalettes, setTarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // --- MODIFICATION --- : États pour le nouveau champ
+    const [isLoading, setIsLoading] = useState(true);
+    const [mouvementTypes, setMouvementTypes] = useState<DropdownItem[]>([]);
+    // L'état interne peut garder le PascalCase, ce n'est pas grave
+    const [mouvementTypeID, setMouvementTypeID] = useState<string>(''); // Champ requis par l'API
+
+    // --- MODIFICATION --- : Chargement des types de mouvements
+    useEffect(() => {
+        const loadMvtTypes = async () => {
+            try {
+                setIsLoading(true);
+                const data = await getMouvementStockTypes();
+                setMouvementTypes(data);
+            } catch (error: any) {
+                Alert.alert("Erreur", "Impossible de charger les types de mouvements.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadMvtTypes();
+    }, []);
+
+
     const handleValidation = async () => {
         if (!user || !user.magasinID || !user.locationID || !user.name) {
             Alert.alert("Erreur d'utilisateur", "Vos informations utilisateur sont incomplètes. Impossible de continuer.");
             return;
         }
         
+        // --- MODIFICATION --- : Ajout de mouvementTypeID à la validation
         const requiredFields = [
             { name: 'N° Bordereau Réception', value: numBordereau },
             { name: 'Tracteur', value: tracteur },
             { name: 'Remorque', value: remorque },
+            { name: 'Type de Mouvement', value: mouvementTypeID }, // On valide l'état
             { name: 'Nombre de sacs', value: nombreSacs },
             { name: 'Nombre de palettes', value: nombrePalettes },
             { name: 'Poids Brut Réception', value: poidsBrut },
@@ -49,15 +79,16 @@ const ReceptionScreen = () => {
             { name: 'Tare Sacs Réception', value: tareSacs },
             { name: 'Tare Palettes Réception', value: tarePalettes },
         ];
-
+        // ... (validation des champs vides inchangée) ...
         for (const field of requiredFields) {
-            if (!field.value.trim()) {
+            if (!field.value || !field.value.trim()) { // Ajout vérification 'undefined' et 'trim'
                 Alert.alert("Champ obligatoire", `Veuillez remplir le champ : ${field.name}`);
                 return;
             }
         }
 
-        const numericFields = requiredFields.slice(3);
+        // Note: La validation numérique commence à l'index 3 (Type de Mouvement)
+        const numericFields = requiredFields.slice(3); 
         for (const field of numericFields) {
             if (isNaN(parseFloat(field.value))) {
                 Alert.alert("Valeur invalide", `Le champ "${field.name}" doit être un nombre valide.`);
@@ -67,6 +98,7 @@ const ReceptionScreen = () => {
 
         setIsSubmitting(true);
 
+        // --- MODIFICATION --- : Correction de la clé en 'mouvementTypeId' (camelCase)
         const receptionData: ReceptionData = {
             dateReception: new Date().toISOString(),
             destinationID: user.magasinID,
@@ -83,6 +115,7 @@ const ReceptionScreen = () => {
             tarePaletteArrive: parseFloat(tarePalettes) || 0,
             statut: 'RE',
             rowVersionKey: item.rowVersionKey,
+            mouvementTypeId: parseInt(mouvementTypeID, 10), // Clé corrigée (camelCase)
         };
 
         try {
@@ -90,16 +123,22 @@ const ReceptionScreen = () => {
             Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${item.numeroLot} est entré en stock.` });
             navigation.goBack();
         } catch (receptionError: any) {
-            const errorMessage = receptionError.message || '';
-            if (errorMessage.includes('Prière vérifier le magasin de reception')) {
-                Alert.alert("Action Impossible", "Ce lot ne peut pas être réceptionné dans ce magasin car c'est son point d'expédition d'origine.");
-            } else {
-                Alert.alert("Échec de la Réception", errorMessage);
-            }
+            // L'erreur est déjà formatée par le 'routes.ts' mis à jour
+            Alert.alert("Échec de la Réception", receptionError.message);
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    // --- MODIFICATION --- : Ajout du loader pendant le chargement des types
+    if (isLoading) {
+        return (
+            <View style={[Styles.container, Styles.loader]}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+                <Text style={Styles.loadingText}>Chargement...</Text>
+            </View>
+        );
+    }
 
     return (
         <ScrollView style={Styles.container}>
@@ -116,6 +155,22 @@ const ReceptionScreen = () => {
 
                 <View style={localStyles.sectionContainer}>
                     <Text style={localStyles.sectionTitle}>Détails de la Réception</Text>
+                    
+                    {/* --- MODIFICATION --- : Ajout du Picker */}
+                    <View style={localStyles.pickerContainer}>
+                        <Picker 
+                            selectedValue={mouvementTypeID} 
+                            onValueChange={(itemValue) => setMouvementTypeID(itemValue)} 
+                            style={localStyles.pickerText}
+                            enabled={!isLoading}
+                        >
+                            <Picker.Item label="Type de Mouvement *" value="" enabled={false} style={{ color: '#999999' }}/>
+                            {mouvementTypes.map(mvt => (
+                                <Picker.Item key={mvt.id} label={mvt.designation} value={mvt.id.toString()} />
+                            ))}
+                        </Picker>
+                    </View>
+                    
                     <CustomTextInput placeholder="N° Bordereau Réception *" value={numBordereau} onChangeText={setNumBordereau} />
                     <CustomTextInput placeholder="Tracteur *" value={tracteur} onChangeText={setTracteur} />
                     <CustomTextInput placeholder="Remorque *" value={remorque} onChangeText={setRemorque} />
@@ -130,13 +185,14 @@ const ReceptionScreen = () => {
 
                 <View style={Styles.modalButtonContainer}>
                     <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} disabled={isSubmitting} />
-                    <Button title="Valider Réception" onPress={handleValidation} color={Colors.primary} disabled={isSubmitting} />
+                    <Button title="Valider Réception" onPress={handleValidation} color={Colors.primary} disabled={isSubmitting || isLoading} />
                 </View>
             </View>
         </ScrollView>
     );
 };
 
+// ... (localStyles inchangés) ...
 const localStyles = StyleSheet.create({
     pageContainer: { padding: 20, paddingTop: 40 },
     sectionContainer: { 
@@ -160,6 +216,28 @@ const localStyles = StyleSheet.create({
     infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, },
     infoLabel: { fontSize: 16, color: '#666', },
     infoValue: { fontSize: 16, fontWeight: '500', color: '#000', },
+    // --- MODIFICATION --- : Ajout des styles manquants
+    pickerContainer: {
+        backgroundColor: '#fff',
+        borderColor: '#E3E3E3', 
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: 15,
+        justifyContent: 'center',
+    },
+    pickerText: {
+        color: Colors.textDark, // Assure la visibilité du texte
+    },
+    loader: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        color: Colors.darkGray,
+    }
 });
 
 export default ReceptionScreen;
+

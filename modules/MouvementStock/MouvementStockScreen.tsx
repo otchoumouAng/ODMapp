@@ -11,18 +11,19 @@ import * as mouvementApiService from './routes';
 import { Styles, Colors } from '../../styles/style';
 
 const MouvementStockScreen = () => {
-  // On récupère l'utilisateur depuis le contexte
   const { user } = useContext(AuthContext); 
 
   const getTodayDateString = () => new Date().toISOString().split('T')[0];
-
-  const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  
+  // 'filters' représente maintenant les filtres "appliqués"
   const [filters, setFilters] = useState<MouvementStockFilters>({
     dateDebut: getTodayDateString(),
     dateFin: getTodayDateString(),
     campagneID: '',
   });
+
+  const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedItem, setSelectedItem] = useState<MouvementStock | null>(null);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
 
@@ -45,8 +46,9 @@ const MouvementStockScreen = () => {
     }, initialSummary);
   }, [mouvements]);
 
+
+  // 'fetchMouvements' dépend maintenant de 'filters' (l'état appliqué)
   const fetchMouvements = useCallback(async () => {
-    // On attend d'avoir les infos de l'utilisateur pour lancer la requête
     if (!user?.magasinID) {
       setMouvements([]);
       setLoading(false);
@@ -57,7 +59,7 @@ const MouvementStockScreen = () => {
     try {
       const queryParams = new URLSearchParams();
       
-      // Ajout des filtres de l'interface
+      // 'filters' contient les filtres validés par "Appliquer"
       if (filters.dateDebut) queryParams.append('DateDebut', filters.dateDebut);
       if (filters.dateFin) queryParams.append('DateFin', filters.dateFin);
       if (filters.exportateurID) queryParams.append('ExportateurID', filters.exportateurID);
@@ -65,7 +67,6 @@ const MouvementStockScreen = () => {
       if (filters.mouvementTypeID) queryParams.append('MouvementTypeID', filters.mouvementTypeID);
       if (filters.sens) queryParams.append('Sens', filters.sens);
       
-      // Ajout OBLIGATOIRE du magasin de l'utilisateur comme paramètre
       queryParams.append('MagasinID', user.magasinID.toString());
 
       const data = await mouvementApiService.getMouvements(queryParams);
@@ -75,23 +76,29 @@ const MouvementStockScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, user]);
+  }, [filters, user]); // Se déclenche uniquement si 'filters' (appliqués) change
 
-
+  // useEffect pour le fetch initial (inchangé)
   useEffect(() => {
     fetchMouvements();
   }, [fetchMouvements]);
 
-  const handleFilterValueChange = (name: keyof MouvementStockFilters, value: any) => {
-    setFilters(prev => ({...prev, [name]: value}));
+  // --- NOUVELLE FONCTION ---
+  // Met à jour l'état 'filters' avec les filtres validés par l'enfant
+  const handleApplyFilters = (newFilters: MouvementStockFilters) => {
+    setFilters(newFilters);
+    // Le 'useEffect' sur 'fetchMouvements' se déclenchera
   };
 
+  // 'handleResetFilters' met à jour l'état 'filters', ce qui
+  // mettra à jour l'état local du composant filtre via les props
   const handleResetFilters = () => {
     setFilters({
       dateDebut: getTodayDateString(),
       dateFin: getTodayDateString(),
       campagneID: ''
     });
+    // Le 'useEffect' sur 'fetchMouvements' se déclenchera
   }
 
   const handleRowPress = (item: MouvementStock) => {
@@ -133,10 +140,11 @@ const MouvementStockScreen = () => {
 
   return (
     <View style={Styles.container}>
+      {/* --- PROPS MISES À JOUR --- */}
       <MouvementStockFilter 
         filters={filters}
-        onValueChange={handleFilterValueChange}
         onReset={handleResetFilters}
+        onApply={handleApplyFilters} // 'onValueChange' est remplacé par 'onApply'
       />
       
       {loading ? (
@@ -208,3 +216,4 @@ const localStyles = StyleSheet.create({
         textAlign: 'center' 
     },
 });
+

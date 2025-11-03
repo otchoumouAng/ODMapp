@@ -17,20 +17,34 @@ export interface MouvementStockFilters {
 }
 
 interface MouvementStockFilterProps {
+    // 'filters' représente les filtres "actifs" (ceux appliqués)
     filters: MouvementStockFilters;
-    onValueChange: (name: keyof MouvementStockFilters, value: any) => void;
+    // 'onReset' est appelé pour réinitialiser les filtres
     onReset: () => void;
+    // --- NOUVELLE PROP ---
+    // 'onApply' est appelé quand l'utilisateur clique sur "Appliquer"
+    onApply: (filters: MouvementStockFilters) => void;
 }
 
-const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, onValueChange, onReset }) => {
+// --- LOGIQUE MISE À JOUR ---
+const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, onReset, onApply }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
 
+    // --- NOUVEL ÉTAT LOCAL ---
+    // 'localFilters' stocke les changements avant qu'ils ne soient appliqués
+    const [localFilters, setLocalFilters] = useState<MouvementStockFilters>(filters);
+
     const [exportateurs, setExportateurs] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
     const [campagnes, setCampagnes] = useState<string[]>([]);
+
+    // S'assure que l'état local est synchronisé avec les filtres actifs (ex: après un reset)
+    useEffect(() => {
+        setLocalFilters(filters);
+    }, [filters]);
 
     useEffect(() => {
         const loadDropdownData = async () => {
@@ -49,14 +63,26 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
         }
     }, [isExpanded, dropdownsLoaded]);
 
+    // --- NOUVELLE FONCTION ---
+    // Met à jour l'état local, SANS déclencher de rafraîchissement
+    const handleLocalValueChange = (name: keyof MouvementStockFilters, value: any) => {
+        setLocalFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    // --- NOUVELLE FONCTION ---
+    // Appelée par le bouton "Appliquer"
+    const handleApply = () => {
+        onApply(localFilters); // Envoie les filtres locaux au parent
+        setIsExpanded(false); // Ferme le panneau de filtres
+    };
+
     const handleDateChange = (event: any, selectedDate?: Date) => {
-        // Pour Android, le picker se ferme automatiquement. Pour iOS, on gère la fermeture.
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate && datePickerTarget) {
             const formattedDate = selectedDate.toISOString().split('T')[0];
-            onValueChange(datePickerTarget, formattedDate);
+            // Met à jour l'état local
+            handleLocalValueChange(datePickerTarget, formattedDate);
         }
-        // Toujours réinitialiser la cible et fermer le picker après une action (ou une annulation)
         setDatePickerTarget(null);
         setShowDatePicker(false);
     };
@@ -66,16 +92,13 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
         setShowDatePicker(true);
     };
 
-    // --- CORRECTION 1: Modification de la fonction générique renderPicker ---
     const renderPicker = (label: string, selectedValue: any, onValueChangeCallback: (value: any) => void, items: any[], labelKey: string, valueKey: string) => (
         <View style={Styles.filterPickerContainer}>
             <Text style={Styles.filterPickerLabel}>{label}</Text>
             <Picker
                 selectedValue={selectedValue}
                 onValueChange={onValueChangeCallback}
-                // La prop "style" directe a été retirée pour la compatibilité Android
                 mode="dropdown">
-                {/* Le placeholder est maintenant désactivé et stylisé en gris */}
                 <Picker.Item label={`Tous`} value="" style={{ color: '#999999' }} />
                 {items.map(item => (
                     <Picker.Item key={item[valueKey]} label={item[labelKey]} value={item[valueKey].toString()} />
@@ -99,14 +122,13 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
 
             {isExpanded && (
                 <ScrollView>
-                    {/* Les Pickers génériques utilisent maintenant la fonction corrigée */}
-                    {renderPicker("Exportateurs", filters.exportateurID, (val) => onValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
-                    {renderPicker("Types", filters.mouvementTypeID, (val) => onValueChange('mouvementTypeID', val), types, 'designation', 'id')}
+                    {/* Les Pickers appellent maintenant 'handleLocalValueChange' */}
+                    {renderPicker("Exportateurs", localFilters.exportateurID, (val) => handleLocalValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
+                    {renderPicker("Types", localFilters.mouvementTypeID, (val) => handleLocalValueChange('mouvementTypeID', val), types, 'designation', 'id')}
 
-                    {/* --- CORRECTION 2: Application des correctifs sur les Pickers manuels --- */}
                     <View style={Styles.filterPickerContainer}>
                         <Text style={Styles.filterPickerLabel}>Sens</Text>
-                        <Picker selectedValue={filters.sens} onValueChange={(val) => onValueChange('sens', val)} mode="dropdown">
+                        <Picker selectedValue={localFilters.sens} onValueChange={(val) => handleLocalValueChange('sens', val)} mode="dropdown">
                             <Picker.Item label="Tous" value="" style={{ color: '#999999' }} />
                             <Picker.Item label="Entrée" value="1" />
                             <Picker.Item label="Sortie" value="-1" />
@@ -115,7 +137,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
                     
                     <View style={Styles.filterPickerContainer}>
                         <Text style={Styles.filterPickerLabel}>Campagnes</Text>
-                        <Picker selectedValue={filters.campagneID} onValueChange={(val) => onValueChange('campagneID', val)} mode="dropdown">
+                        <Picker selectedValue={localFilters.campagneID} onValueChange={(val) => handleLocalValueChange('campagneID', val)} mode="dropdown">
                             <Picker.Item label="Toutes" value="" style={{ color: '#999999' }} />
                             {campagnes.map(c => <Picker.Item key={c} label={c} value={c} />)}
                         </Picker>
@@ -127,7 +149,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
                             <View style={localStyles.dateButtonContent}>
                                 <CalendarBlank size={20} color={Colors.darkGray} />
                                 <Text style={localStyles.dateText}>
-                                    {filters.dateDebut || "Sélectionner une date"}
+                                    {localFilters.dateDebut || "Sélectionner une date"}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -139,21 +161,24 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
                             <View style={localStyles.dateButtonContent}>
                                 <CalendarBlank size={20} color={Colors.darkGray} />
                                 <Text style={localStyles.dateText}>
-                                    {filters.dateFin || "Sélectionner une date"}
+                                    {localFilters.dateFin || "Sélectionner une date"}
                                 </Text>
                             </View>
                         </TouchableOpacity>
                     </View>
 
+                    {/* --- BOUTONS MIS À JOUR --- */}
                     <View style={Styles.filterButtonContainer}>
                         <Button title="Réinitialiser" onPress={onReset} color={Colors.danger} />
+                        {/* --- NOUVEAU BOUTON "APPLIQUER" --- */}
+                        <Button title="Appliquer" onPress={handleApply} color={Colors.primary} />
                     </View>
                 </ScrollView>
             )}
 
             {showDatePicker && (
                 <DateTimePicker
-                    value={datePickerTarget && filters[datePickerTarget] ? new Date(filters[datePickerTarget]!) : new Date()}
+                    value={datePickerTarget && localFilters[datePickerTarget] ? new Date(localFilters[datePickerTarget]!) : new Date()}
                     mode="date"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={handleDateChange}
@@ -163,6 +188,7 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
     );
 };
 
+// ... (styles locaux inchangés) ...
 const localStyles = StyleSheet.create({
     header: {
         flexDirection: 'row',
@@ -200,3 +226,4 @@ const localStyles = StyleSheet.create({
 });
 
 export default MouvementStockFilter;
+
