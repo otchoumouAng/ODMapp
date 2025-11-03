@@ -5,8 +5,7 @@ import { Colors, Styles } from '../../styles/style';
 import LotCard from '../Shared/components/LotCard';
 import { AuthContext } from '../../contexts/AuthContext';
 import { getLotsARecevoir } from './routes';
-// Le type TransfertLot est défini dans un fichier partagé
-import { TransfertLot } from '../Shared/type'; 
+import { TransfertLot } from '../Shared/type';
 
 const EntreeScreen = () => {
     const { user } = useContext(AuthContext);
@@ -24,11 +23,11 @@ const EntreeScreen = () => {
                 }
                 setLoading(true);
                 try {
-                    // Appelle l'API /api/transfertlot/entransit
                     const data = await getLotsARecevoir(user.magasinID);
                     setLots(data);
-                } catch (error: any) {
-                    Alert.alert("Erreur", error.message || "Impossible de charger les lots à recevoir.");
+                } catch (error) {
+                    //console.error("Échec du chargement des lots à recevoir:", error);
+                    Alert.alert("Erreur", "Impossible de charger les lots à recevoir.");
                 } finally {
                     setLoading(false);
                 }
@@ -38,7 +37,6 @@ const EntreeScreen = () => {
     );
 
     const handleCardPress = (item: TransfertLot) => {
-        // Navigue vers l'écran de formulaire en passant l'objet TransfertLot complet
         navigation.navigate('ReceptionScreen', { item });
     };
 
@@ -51,47 +49,19 @@ const EntreeScreen = () => {
             <FlatList
                 data={lots}
                 renderItem={({ item }) => (
-                    // --- MODIFICATION --- : Mappage complet vers le LotCard
-                    // Le LotCard attend un type 'Lot', nous mappons 'TransfertLot' vers 'Lot'
                     <LotCard 
                         item={{
-                            id: item.id, // ID du transfert (GUID)
+                            id: item.id,
                             numeroLot: item.numeroLot,
                             poidsNet: item.poidsNetExpedition ?? 0,
                             exportateurNom: item.exportateurNom ?? 'N/A',
-                            statut: item.statut, // Statut du transfert (ex: 'NA')
-                            campagneID: item.campagneID,
-                            dateLot: item.dateExpedition, // La date pertinente est la date d'expédition
-                            nombreSacs: item.nombreSacsExpedition ?? 0,
-                            poidsBrut: item.poidsBrutExpedition ?? 0,
-                            exportateurID: item.exportateurID,
-
-                            // --- Champs requis par 'Lot' (type du LotCard) ---
-                            // Fournir des valeurs par défaut
-                            typeLotID: 0,
-                            typeLotDesignation: "Transfert",
-                            certificationID: 0,
-                            certificationDesignation: "N/A",
-                            productionID: '', 
-                            numeroProduction: '',
-                            tareSacs: item.tareSacsExpedition ?? 0,
-                            tarePalettes: item.tarePaletteExpedition ?? 0,
-                            estQueue: false,
-                            estManuel: false,
-                            estReusine: false,
-                            desactive: false,
-                            creationUtilisateur: item.creationUtilisateur,
-                            creationDate: item.creationDate,
-                            rowVersionKey: item.rowVersionKey, 
-                            estQueueText: 'No',
-                            estManuelText: 'Yes',
-                            estReusineText: 'No',
-                            estFictif: false,
+                            statut: item.statut,
+                            // Mapper les autres champs nécessaires pour LotCard
                         }}
                         onPress={() => handleCardPress(item)}
                     />
                 )}
-                keyExtractor={(item) => item.id} // L'ID du transfert est unique
+                keyExtractor={(item) => item.id}
                 contentContainerStyle={Styles.list}
                 ListEmptyComponent={<Text style={Styles.emptyText}>Aucun lot en attente de réception.</Text>}
             />

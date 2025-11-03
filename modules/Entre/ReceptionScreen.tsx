@@ -1,18 +1,30 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, Button, Alert, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+    View, Text, Button, Alert, ScrollView, StyleSheet,
+    ActivityIndicator, SafeAreaView, KeyboardAvoidingView, Platform
+} from 'react-native';
 import Toast from 'react-native-toast-message';
-import { Picker } from '@react-native-picker/picker'; // Ajout de Picker
+// Il n'y a plus besoin de Picker ici, on peut le supprimer
+// import { Picker } from '@react-native-picker/picker'; 
 import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { TransfertLot, DropdownItem } from '../Shared/type'; // Ajout de DropdownItem
+import { TransfertLot, DropdownItem } from '../Shared/type';
 import { ReceptionData } from './type';
 import { validerReception } from './routes';
-import { getMouvementStockTypes } from '../Shared/route'; // Ajout de l'import
+import { getMouvementStockTypes } from '../Shared/route';
 import CustomTextInput from '../Shared/components/CustomTextInput';
 
 const InfoRow = ({ label, value }: { label: string, value: any }) => (
-    <View style={localStyles.infoRow}><Text style={localStyles.infoLabel}>{label}</Text><Text style={localStyles.infoValue}>{value ?? 'N/A'}</Text></View>
+    <View style={localStyles.infoRow}>
+        <Text style={localStyles.infoLabel}>{label}</Text>
+        <Text style={localStyles.infoValue}>{value ?? 'N/A'}</Text>
+    </View>
+);
+
+// Ajout du composant FormLabel (si vous ne l'avez pas dans un fichier partagé)
+const FormLabel = ({ text }: { text: string }) => (
+    <Text style={localStyles.formLabel}>{text}</Text>
 );
 
 const ReceptionScreen = () => {
@@ -21,50 +33,49 @@ const ReceptionScreen = () => {
     const { user } = useContext(AuthContext);
     const { item } = route.params as { item: TransfertLot };
 
-    // --- LOGIQUE MISE À JOUR ---
-    // Tous les états sont pré-remplis avec les données de l'expédition
-    const [numBordereau, setNumBordereau] = useState(item.numBordereauExpedition ?? '');
-    const [tracteur, setTracteur] = useState(item.immTracteurExpedition ?? '');
-    const [remorque, setRemorque] = useState(item.immRemorqueExpedition ?? '');
-    const [nombreSacs, setNombreSacs] = useState(item.nombreSacsExpedition?.toString() ?? '0');
-    const [nombrePalettes, setNombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '0');
-    const [poidsBrut, setPoidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '0');
-    const [poidsNet, setPoidsNet] = useState(item.poidsNetExpedition?.toString() ?? '0');
-    const [tareSacs, setTareSacs] = useState(item.tareSacsExpedition?.toString() ?? '0');
-    const [tarePalettes, setTarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '0');
+    // --- LOGIQUE MISE À JOUR (INCHANGÉE) ---
+    // Les états sont toujours nécessaires pour être envoyés à l'API,
+    // même s'ils ne sont plus affichés dans des inputs.
+    const [numBordereau] = useState(item.numBordereauExpedition ?? '');
+    const [tracteur] = useState(item.immTracteurExpedition ?? '');
+    const [remorque] = useState(item.immRemorqueExpedition ?? '');
+    const [nombreSacs] = useState(item.nombreSacsExpedition?.toString() ?? '0');
+    const [nombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '0');
+    const [poidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '0');
+    const [poidsNet] = useState(item.poidsNetExpedition?.toString() ?? '0');
+    const [tareSacs] = useState(item.tareSacsExpedition?.toString() ?? '0');
+    const [tarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '0');
     
     // Le seul champ éditable
     const [commentaire, setCommentaire] = useState('');
 
-    // États pour le type de mouvement (maintenant auto-sélectionné)
-    const [mouvementTypes, setMouvementTypes] = useState<DropdownItem[]>([]);
     const [mouvementTypeID, setMouvementTypeID] = useState<string>('');
+    const [mouvementTypeNom, setMouvementTypeNom] = useState<string>('Chargement...'); // Pour l'affichage
     
-    const [loading, setLoading] = useState(true); // Gère le chargement des types de mvt
+    const [loading, setLoading] = useState(true); 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- LOGIQUE MISE À JOUR ---
-    // Charge les types de mouvement et sélectionne "31" (Réception) par défaut
     useEffect(() => {
         const loadMouvementTypes = async () => {
             setLoading(true);
             try {
                 const data = await getMouvementStockTypes();
-                setMouvementTypes(data);
-                
-                // Trouve le type de mouvement "31" (basé sur l'exemple Postman)
                 const defaultReceptionType = data.find(m => m.id === 31);
                 
                 if (defaultReceptionType) {
                     setMouvementTypeID(defaultReceptionType.id.toString());
-                } else if (data.length > 0) {
-                    // Fallback si 31 n'existe pas (ne devrait pas arriver)
+                    setMouvementTypeNom(defaultReceptionType.designation); // Stocker le nom
+                } else {
                     Alert.alert("Erreur de configuration", "Type de mouvement '31' introuvable.");
-                    setMouvementTypeID(data[0].id.toString());
+                    if (data.length > 0) {
+                        setMouvementTypeID(data[0].id.toString());
+                        setMouvementTypeNom(data[0].designation);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to load mouvement types:", error);
                 Alert.alert("Erreur", "Impossible de charger les types de mouvements.");
+                setMouvementTypeNom('Erreur');
             } finally {
                 setLoading(false);
             }
@@ -79,7 +90,6 @@ const ReceptionScreen = () => {
             return;
         }
         
-        // Validation simple, car tout est pré-rempli
         if (!mouvementTypeID) {
             Alert.alert("Patientez", "Le type de mouvement est en cours de chargement.");
             return;
@@ -87,14 +97,10 @@ const ReceptionScreen = () => {
 
         setIsSubmitting(true);
 
-        // --- LOGIQUE MISE À JOUR ---
-        // Les données sont lues depuis les états pré-remplis
         const receptionData: ReceptionData = {
             dateReception: new Date().toISOString(),
             destinationID: user.magasinID,
             modificationUser: user.name,
-            
-            // Données pré-remplies (lecture seule)
             numBordereauRec: numBordereau.trim(),
             immTracteurRec: tracteur.trim(),
             immRemorqueRec: remorque.trim(),
@@ -104,11 +110,8 @@ const ReceptionScreen = () => {
             poidsNetRecu: parseFloat(poidsNet) || 0,
             tareSacRecu: parseFloat(tareSacs) || 0,
             tarePaletteArrive: parseFloat(tarePalettes) || 0,
-            mouvementTypeId: parseInt(mouvementTypeID, 10), // Corrigé en 'mouvementTypeId'
-            
-            // Seul champ éditable
+            mouvementTypeId: parseInt(mouvementTypeID, 10),
             commentaireRec: commentaire.trim(),
-
             statut: 'RE',
             rowVersionKey: item.rowVersionKey,
         };
@@ -125,9 +128,11 @@ const ReceptionScreen = () => {
         }
     };
 
+    // --- LE Rendu "Ouf" ---
+
     if (loading) {
         return (
-            <View style={[Styles.container, Styles.loader]}>
+            <View style={[localStyles.pageContainer, localStyles.loaderContainer]}>
                 <ActivityIndicator size="large" color={Colors.primary} />
                 <Text style={Styles.loadingText}>Chargement des données...</Text>
             </View>
@@ -135,165 +140,181 @@ const ReceptionScreen = () => {
     }
 
     return (
-        <ScrollView style={Styles.container}>
-            <View style={localStyles.pageContainer}>
-                <Text style={Styles.modalTitle}>RÉCEPTION DU LOT</Text>
-                <Text style={localStyles.lotNumberHeader}>{item.numeroLot}</Text>
-
-                <View style={localStyles.sectionContainer}>
-                    <Text style={localStyles.sectionTitle}>Détails de l'Expédition</Text>
-                    <InfoRow label="Magasin Expéditeur" value={item.magasinExpeditionNom} />
-                    <InfoRow label="Sacs Expédiés" value={item.nombreSacsExpedition} />
-                    <InfoRow label="Poids Net Expédié" value={`${item.poidsNetExpedition?.toFixed(2)} kg`} />
-                    <InfoRow label="N° Bordereau Exp." value={item.numBordereauExpedition} />
-                    <InfoRow label="Tracteur Exp." value={item.immTracteurExpedition} />
-                    <InfoRow label="Remorque Exp." value={item.immRemorqueExpedition} />
-                </View>
-
-                <View style={localStyles.sectionContainer}>
-                    <Text style={localStyles.sectionTitle}>Détails de la Réception</Text>
+        <SafeAreaView style={localStyles.pageContainer}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                <ScrollView 
+                    style={localStyles.scrollContainer} 
+                    contentContainerStyle={localStyles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <Text style={Styles.modalTitle}>RÉCEPTION DU LOT</Text>
+                    <Text style={localStyles.lotNumberHeader}>{item.numeroLot}</Text>
                     
-                    {/* --- LOGIQUE MISE À JOUR : Champs en lecture seule --- */}
-                    
-                    <CustomTextInput 
-                        placeholder="N° Bordereau Réception *" 
-                        value={numBordereau} 
-                        onChangeText={setNumBordereau} 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Tracteur *" 
-                        value={tracteur} 
-                        onChangeText={setTracteur} 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Remorque *" 
-                        value={remorque} 
-                        onChangeText={setRemorque} 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    
-                    <View style={[localStyles.pickerContainer, localStyles.disabledPicker]}>
-                        <Picker 
-                            selectedValue={mouvementTypeID} 
-                            onValueChange={(itemValue) => setMouvementTypeID(itemValue)} 
-                            style={localStyles.pickerText}
-                            enabled={false} // Désactivé
-                        >
-                            <Picker.Item label="Type de Mouvement *" value="" style={{ color: '#999999' }}/>
-                            {mouvementTypes.map(mvt => (
-                                <Picker.Item key={mvt.id} label={mvt.designation} value={mvt.id.toString()} />
-                            ))}
-                        </Picker>
+                    {/* --- CARTE 1 : Infos Expédition --- */}
+                    <View style={localStyles.sectionContainer}>
+                        <Text style={localStyles.sectionTitle}>Détails de l'Expédition</Text>
+                        <InfoRow label="Magasin Expéditeur" value={item.magasinExpeditionNom} />
+                        <InfoRow label="N° Bordereau Exp." value={item.numBordereauExpedition} />
+                        <InfoRow label="Tracteur Exp." value={item.immTracteurExpedition} />
+                        <InfoRow label="Remorque Exp." value={item.immRemorqueExpedition} />
                     </View>
 
-                    <CustomTextInput 
-                        placeholder="Nombre de sacs *" 
-                        value={nombreSacs} 
-                        onChangeText={setNombreSacs} 
-                        keyboardType="numeric" 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Nombre de palettes *" 
-                        value={nombrePalettes} 
-                        onChangeText={setNombrePalettes} 
-                        keyboardType="numeric" 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Poids Brut Réception *" 
-                        value={poidsBrut} 
-                        onChangeText={setPoidsBrut} 
-                        keyboardType="decimal-pad" 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Poids Net Réception *" 
-                        value={poidsNet} 
-                        onChangeText={setPoidsNet} 
-                        keyboardType="decimal-pad" 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Tare Sacs Réception *" 
-                        value={tareSacs} 
-                        onChangeText={setTareSacs} 
-                        keyboardType="decimal-pad" 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    <CustomTextInput 
-                        placeholder="Tare Palettes Réception *" 
-                        value={tarePalettes} 
-                        onChangeText={setTarePalettes} 
-                        keyboardType="decimal-pad" 
-                        editable={false} 
-                        style={localStyles.disabledInput}
-                    />
-                    
-                    {/* Seul champ éditable */}
-                    <CustomTextInput 
-                        placeholder="Commentaire" 
-                        value={commentaire} 
-                        onChangeText={setCommentaire} 
-                        multiline 
-                        editable={true}
-                    />
+                    {/* --- CARTE 2 : Données de Réception (Confirmées) --- */}
+                    {/* C'est ici le "Ouf". Fini les inputs grisés ! */}
+                    <View style={localStyles.sectionContainer}>
+                        <Text style={localStyles.sectionTitle}>Données à Confirmer</Text>
+                        <InfoRow label="Type de Mouvement" value={mouvementTypeNom} />
+                        <InfoRow label="Nombre de sacs" value={nombreSacs} />
+                        <InfoRow label="Nombre de palettes" value={nombrePalettes} />
+                        
+                        {/* Séparateur visuel */}
+                        <View style={localStyles.separator} /> 
+                        
+                        <InfoRow label="Poids Brut" value={`${poidsBrut} kg`} />
+                        <InfoRow label="Tare Sacs" value={`${tareSacs} kg`} />
+                        <InfoRow label="Tare Palettes" value={`${tarePalettes} kg`} />
+                        
+                         {/* Séparateur visuel */}
+                        <View style={localStyles.separator} /> 
+
+                        {/* Mise en avant du Poids Net */}
+                        <InfoRow label="Poids Net Réception" value={poidsNet} /> 
+                    </View>
+
+                    {/* --- CARTE 3 : Seul champ éditable --- */}
+                    <View style={localStyles.sectionContainer}>
+                         <Text style={localStyles.sectionTitle}>Commentaire</Text>
+                        <FormLabel text="Ajouter une note (optionnel)" />
+                        <CustomTextInput 
+                            placeholder="Saisir un commentaire..." 
+                            value={commentaire} 
+                            onChangeText={setCommentaire} 
+                            multiline 
+                            editable={true}
+                        />
+                    </View>
+
+                </ScrollView>
+                
+                {/* --- FOOTER D'ACTION (Sticky) --- */}
+                <View style={localStyles.footerContainer}>
+                    <View style={localStyles.footerButtonWrapper}>
+                        <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} disabled={isSubmitting} />
+                    </View>
+                    <View style={localStyles.footerButtonWrapper}>
+                        <Button title="Valider Réception" onPress={handleValidation} color={Colors.primary} disabled={isSubmitting || loading} />
+                    </View>
                 </View>
 
-                <View style={Styles.modalButtonContainer}>
-                    <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} disabled={isSubmitting} />
-                    <Button title="Valider Réception" onPress={handleValidation} color={Colors.primary} disabled={isSubmitting || loading} />
-                </View>
-            </View>
-        </ScrollView>
+            </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 };
 
+// --- STYLES "OUF" (Réutilisés de TransfertScreen) ---
 const localStyles = StyleSheet.create({
-    pageContainer: { padding: 20, paddingTop: 40 },
-    sectionContainer: { 
-        backgroundColor: '#fff', 
-        borderRadius: 8, 
-        padding: 16, 
-        marginBottom: 20, 
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: '#ddd'
+    pageContainer: {
+        flex: 1,
+        backgroundColor: Colors.background || '#f4f7f8',
     },
-    sectionTitle: { 
-        fontSize: 18, 
-        fontWeight: 'bold', 
-        color: Colors.primary, 
-        marginBottom: 12, 
-        borderBottomWidth: StyleSheet.hairlineWidth, 
-        borderBottomColor: '#ccc', 
-        paddingBottom: 8, 
+    scrollContainer: {
+        flex: 1,
     },
-    lotNumberHeader: { textAlign: 'center', fontSize: 22, fontWeight: 'bold', color: Colors.dark, marginBottom: 20, },
-    infoRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, },
-    infoLabel: { fontSize: 16, color: '#666', },
-    infoValue: { fontSize: 16, fontWeight: '500', color: '#000', textAlign: 'right' },
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 40,
+    },
+    loaderContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    footerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        padding: 16,
+        paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+        backgroundColor: '#ffffff',
+        borderTopWidth: 1,
+        borderTopColor: '#e0e0e0',
+    },
+    footerButtonWrapper: {
+        flex: 1,
+        marginHorizontal: 8,
+    },
+    sectionContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.primary,
+        marginBottom: 16,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: '#eee',
+        paddingBottom: 8,
+    },
+    lotNumberHeader: {
+        textAlign: 'center',
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: Colors.primary,
+        marginBottom: 20,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 10, // Plus d'espace
+        alignItems: 'center',
+    },
+    infoLabel: {
+        fontSize: 16,
+        color: Colors.darkGray,
+    },
+    infoValue: {
+        fontSize: 16,
+        fontWeight: 'bold', // Rendre la valeur plus visible
+        color: Colors.dark,
+        textAlign: 'right',
+        flexShrink: 1, // Permet au texte de passer à la ligne si trop long
+    },
+    formLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 8,
+        marginLeft: 2,
+    },
+    // NOUVEAU STYLE pour séparer les groupes d'infos
+    separator: {
+        height: 1,
+        backgroundColor: '#f0f0f0',
+        marginVertical: 8,
+    },
     
-    // Styles pour les champs désactivés
+    // Styles pour les champs désactivés (PLUS UTILISÉS ICI, mais gardés au cas où)
     disabledInput: {
         backgroundColor: '#e9ecef',
-        color: '#6c757d'
+        color: '#6c757d',
+        borderRadius: 5,
+        marginBottom: 15,
     },
     disabledPicker: {
         backgroundColor: '#e9ecef',
+        borderRadius: 5,
+        marginBottom: 15,
     },
-    
     pickerContainer: {
-        backgroundColor: '#fff',
         borderColor: '#E3E3E3', 
         borderWidth: 1,
         borderRadius: 5,
@@ -301,9 +322,8 @@ const localStyles = StyleSheet.create({
         justifyContent: 'center',
     },
     pickerText: {
-        color: Colors.textDark, // Assure la visibilité du texte
+        color: Colors.textDark,
     },
 });
 
 export default ReceptionScreen;
-
