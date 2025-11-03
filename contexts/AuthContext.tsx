@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import Toast from 'react-native-toast-message';
 import { authService } from '../modules/Auth/routes';
@@ -14,9 +14,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const inactivityTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const startInactivityTimer = () => {
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+    inactivityTimer.current = setTimeout(() => {
+      logout();
+    }, 900000); // 15 minutes
+  };
+
+  const resetInactivityTimer = () => {
+    startInactivityTimer();
+  };
 
   useEffect(() => {
-    // Vérifie si un utilisateur est déjà stocké au lancement de l'app
     const checkAuthState = async () => {
       try {
         const storedToken = await SecureStore.getItemAsync('authToken');
@@ -25,6 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          startInactivityTimer();
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données de session:', error);
@@ -33,6 +47,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     };
     checkAuthState();
+
+    return () => {
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
+      }
+    };
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
@@ -40,6 +60,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // ## MODIFICATION : Appel à l'API réelle au lieu de la simulation ##
       const userData = await authService.login(credentials);
+
+      if (userData.isDisabled) {
+        Toast.show({
+          type: 'error',
+          text1: 'Échec de la connexion',
+          text2: 'Votre compte est désactivé.',
+        });
+        throw new Error('User account is disabled.');
+      }
       
       // On utilise l'ID de l'utilisateur comme un token simple et unique
       const userToken = userData.id;
@@ -50,6 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Stockage sécurisé des informations de session
       await SecureStore.setItemAsync('authToken', userToken);
       await SecureStore.setItemAsync('user', JSON.stringify(userData));
+      startInactivityTimer();
 
       Toast.show({
         type: 'success',
@@ -78,7 +108,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
     } finally {
-      // Nettoyage de l'état et du stockage sécurisé
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
+      }
       setToken(null);
       setUser(null);
       await SecureStore.deleteItemAsync('authToken');
@@ -88,7 +120,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading, resetInactivityTimer }}>
       {children}
     </AuthContext.Provider>
   );
