@@ -93,6 +93,12 @@ export default function AppNavigator() {
       <Tab.Screen 
         name="Paramètres" 
         component={SettingsScreen} 
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault(); // ⛔ empêche la navigation
+            console.log('En cours de développement', 'Ce module sera disponible prochainement.');
+          },
+        }}
       />
       <Tab.Screen 
         name="Profil" 

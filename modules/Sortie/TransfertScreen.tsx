@@ -46,7 +46,7 @@ const TransfertScreen = () => {
 
     // --- États du formulaire ---
     const [operationType, setOperationType] = useState<'transfert' | 'empotage' | 'export' | ''>('');
-    const [transfertMode, setTransfertMode] = useState<'total' | 'partiel' | ''>('');
+    const [transfertMode, setTransfertMode] = useState<'total' | 'partiel' | ''>('total');
     const [destinationMagasinId, setDestinationMagasinId] = useState<string>('');
     const [tracteur, setTracteur] = useState('');
     const [remorque, setRemorque] = useState('');
