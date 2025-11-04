@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text } from 'react-native';
+import { PanResponder, Text } from 'react-native';
 import { AuthProvider, AuthContext } from './contexts/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 // Note: Please run "npm install @react-navigation/native" to install the required package
@@ -12,7 +12,14 @@ import Toast from 'react-native-toast-message';
 import React, { useContext } from 'react';
 
 const AppContent: React.FC = () => {
-  const { token, isLoading } = useContext(AuthContext);
+  const { token, isLoading, resetInactivityTimer } = useContext(AuthContext);
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => {
+      resetInactivityTimer();
+      return false;
+    },
+  });
 
   if (isLoading) {
     return (
@@ -23,9 +30,11 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
-      {token ? <AppNavigator /> : <AuthNavigator />}
-    </NavigationContainer>
+    <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+      <NavigationContainer>
+        {token ? <AppNavigator /> : <AuthNavigator />}
+      </NavigationContainer>
+    </View>
   );
 };
 

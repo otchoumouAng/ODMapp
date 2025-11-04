@@ -1,6 +1,7 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { AuthContext } from '../../contexts/AuthContext';
 import { Users, Truck, TrayArrowDown, ArrowsLeftRight, Package } from "phosphor-react-native";
 import { Styles, Colors, Spacing, Typography } from '../../styles/style';
 
@@ -15,12 +16,24 @@ const modules = [
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const { user } = useContext(AuthContext);
 
   return (
     <ScrollView style={Styles.container}>
-      <Text style={[Typography.h1, { padding: Spacing.lg }]}>Modules</Text>
+      <View style={{ padding: Spacing.lg, backgroundColor: Colors.card, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 }}>
+        <View style={{ alignItems: 'center', marginBottom: Spacing.md }}>
+          <Image
+            source={require('../../assets/Logo.png')}
+            style={{ width: 150, height: 50, resizeMode: 'contain' }}
+          />
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={[Typography.h2, { color: Colors.textDark }]}>Bienvenue, {user?.name}!</Text>
+          <Text style={[Typography.body, { color: Colors.textMedium }]}>{user?.magasinNom}</Text>
+        </View>
+      </View>
       
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: Spacing.lg }}>
         {modules.map((module) => (
           <TouchableOpacity
             key={module.id}
