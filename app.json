@@ -2,7 +2,6 @@
   "expo": {
     "name": "DCS-TNCI",
     "slug": "ODMApp",
-    "displayName": "DCS-TNCI",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

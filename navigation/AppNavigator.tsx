@@ -24,7 +24,7 @@ function HomeStack() {
       <Stack.Screen 
         name="HomeMain" 
         component={HomeScreen} 
-        options={{ headerTitle: 'Modules' }}
+        options={{ headerTitle: 'Digital Commodity Sourcing' }}
       />
       <Stack.Screen
         name="MouvementStock"

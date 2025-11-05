@@ -1,9 +1,13 @@
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
+// ImageBackground est importé ici
+import { View, Text, TouchableOpacity, ScrollView, Image, ImageBackground } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Users, Truck, TrayArrowDown, ArrowsLeftRight, Package } from "phosphor-react-native";
 import { Styles, Colors, Spacing, Typography } from '../../styles/style';
+import Logo from '../../assets/Logo.png';
+// Vous avez importé votre image de fond (actuellement la même que le logo)
+import BackgroundImage from '../../assets/background.png'; 
 
 
 
@@ -19,42 +23,55 @@ export default function HomeScreen() {
   const { user } = useContext(AuthContext);
 
   return (
-    <ScrollView style={Styles.container}>
-      <View style={{ padding: Spacing.lg, backgroundColor: Colors.card, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 }}>
-        <View style={{ alignItems: 'center', marginBottom: Spacing.md }}>
-          <Image
-            source={require('../../assets/Logo.png')}
-            style={{ width: 150, height: 50, resizeMode: 'contain' }}
-          />
+    // 1. Utilisez ImageBackground comme composant racine
+    <ImageBackground 
+      source={BackgroundImage} 
+      resizeMode="cover" // "cover" remplit l'écran, "stretch" étire, etc.
+      // 2. Appliquez le style du conteneur principal ici
+      style={Styles.container} 
+    >
+      {/* 3. Placez le ScrollView à l'intérieur */}
+      <ScrollView 
+        // 4. Assurez-vous que le contenu du ScrollView peut grandir
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
+        {/* Le reste de votre contenu reste identique */}
+        <View style={{ padding: Spacing.lg, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 }}>
+          <View style={{ alignItems: 'center', marginBottom: Spacing.md }}>
+            <Image
+              source={Logo}
+              style={{ width: 150, height: 50, resizeMode: 'contain' }}
+            />
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={[Typography.h2, { color: Colors.textDark }]}>Bienvenue, {user?.name}!</Text>
+            <Text style={[Typography.body, { color: Colors.textMedium }]}>{user?.magasinNom}</Text>
+          </View>
         </View>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={[Typography.h2, { color: Colors.textDark }]}>Bienvenue, {user?.name}!</Text>
-          <Text style={[Typography.body, { color: Colors.textMedium }]}>{user?.magasinNom}</Text>
+        
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: Spacing.lg }}>
+          {modules.map((module) => (
+            <TouchableOpacity
+              key={module.id}
+              style={[
+                Styles.card, 
+                { 
+                  width: '40%', 
+                  alignItems: 'center',
+                  margin: Spacing.sm 
+                }
+              ]}
+              onPress={() => navigation.navigate(module.screen as never)}
+              accessibilityLabel={`Ouvrir le module ${module.title}`}
+            >
+              <module.icon size={32} color={Colors.primary} />
+              <Text style={{ marginTop: Spacing.sm, textAlign: 'center' }}>
+                {module.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      </View>
-      
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: Spacing.lg }}>
-        {modules.map((module) => (
-          <TouchableOpacity
-            key={module.id}
-            style={[
-              Styles.card, 
-              { 
-                width: '40%', 
-                alignItems: 'center',
-                margin: Spacing.sm 
-              }
-            ]}
-            onPress={() => navigation.navigate(module.screen as never)}
-            accessibilityLabel={`Ouvrir le module ${module.title}`}
-          >
-            <module.icon size={32} color={Colors.primary} />
-            <Text style={{ marginTop: Spacing.sm, textAlign: 'center' }}>
-              {module.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </ImageBackground>
   );
 }
