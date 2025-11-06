@@ -8,8 +8,8 @@ import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LotDetailReception, ReceptionData } from './type';
-// --- MODIFICATION --- : Importation de la nouvelle fonction
-import { validerReception, getLotDetailForReception, getTransfertById } from './routes';
+// --- MODIFICATION --- : 'getTransfertById' est supprimé
+import { validerReception, getLotDetailForReception } from './routes';
 import { getMouvementStockTypes } from '../Shared/route';
 import CustomTextInput from '../Shared/components/CustomTextInput';
 
@@ -43,8 +43,7 @@ const ReceptionScreen = () => {
     const [transfertId, setTransfertId] = useState<string | null>(null); 
     
     // --- MODIFICATION ---
-    // Le RowVersion est maintenant stocké séparément
-    const [correctRowVersion, setCorrectRowVersion] = useState<any>(null);
+    // 'correctRowVersion' est supprimé, nous utiliserons 'detailData.rowVersionKey'
 
     // États du formulaire
     const [commentaire, setCommentaire] = useState('');
@@ -59,18 +58,16 @@ const ReceptionScreen = () => {
         const loadAllData = async () => {
             setLoading(true);
             try {
-                // 1. Charger les détails du lot (via V4_Lot_GetForReception)
-                // (Ceci nous donne les données d'affichage et le tfID)
+                // 1. Charger les détails ET le bon RowVersion
+                // (La SP V4_Lot_GetForReception est maintenant corrigée)
                 const details = await getLotDetailForReception(lotId);
                 setDetailData(details);
                 setTransfertId(details.idTransfert); // Stocke le tfID
 
-                // 2. Charger l'enregistrement de transfert (via V5_Transfert_Lot_Select)
-                // (Ceci nous donne le *bon* RowVersionKey)
-                const transfertData = await getTransfertById(details.idTransfert);
-                setCorrectRowVersion(transfertData.rowVersionKey); // Stocke le bon RowVersion
+                // --- MODIFICATION ---
+                // L'appel à 'getTransfertById' est supprimé.
 
-                // 3. Charger les types de mouvement
+                // 2. Charger les types de mouvement
                 const typesMvt = await getMouvementStockTypes();
                 const defaultReceptionType = typesMvt.find(m => m.id === 31);
                 
@@ -103,13 +100,15 @@ const ReceptionScreen = () => {
             return;
         }
         
-        if (!transfertId || !correctRowVersion) { // Vérifie les deux
+        // --- MODIFICATION ---
+        // On vérifie 'detailData' et 'detailData.rowVersionKey'
+        if (!transfertId || !detailData?.rowVersionKey) { 
             Alert.alert("Erreur", "Données de transfert ou de version manquantes. Les données n'ont peut-être pas chargé.");
             setIsSubmitting(false);
             return;
         }
         
-        if (!mouvementTypeID || !detailData) {
+        if (!mouvementTypeID) {
             Alert.alert("Patientez", "Les données ne sont pas encore prêtes.");
             return;
         }
@@ -136,13 +135,13 @@ const ReceptionScreen = () => {
             statut: 'RE',
             
             // --- MODIFICATION ---
-            // On utilise le RowVersion que nous avons chargé séparément
-            rowVersionKey: correctRowVersion,
+            // On utilise le RowVersion de 'detailData'
+            rowVersionKey: detailData.rowVersionKey,
         };
 
         try {
-            // On appelle l'API avec 'transfertId' (tfID)
-            await validerReception(transfertId, receptionData);
+            // On appelle l'API avec 'lotId' 
+            await validerReception(lotId, receptionData);
             
             Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${detailData.numeroLot} est entré en stock.` });
             navigation.goBack();

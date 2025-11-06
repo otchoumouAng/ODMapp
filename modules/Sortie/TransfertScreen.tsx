@@ -369,7 +369,6 @@ const TransfertScreen = () => {
             <CustomTextInput
               placeholder="Saisir le nombre de sacs"
               value={nombreSacs?.toString() || ''}
-              // --- MODIFICATION: Utilisation du handler ---
               onChangeText={handleSacsChange}
               editable={isEditable}
               keyboardType="numeric"
@@ -474,6 +473,7 @@ const localStyles = StyleSheet.create({
   pickerContainer: {
     backgroundColor: '#f9f9f9',
     borderColor: '#ddd',
+    color: '#212529',
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 20,

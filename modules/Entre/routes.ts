@@ -38,32 +38,21 @@ export const getLotDetailForReception = async (lotId: string): Promise<LotDetail
 };
 
 // =================================================================
-// NOUVELLE FONCTION AJOUTÉE (Pour contourner le RowVersion)
+// FONCTION 'getTransfertById' SUPPRIMÉE
+// (Elle causait le 404 et n'est plus nécessaire car la SP est corrigée)
 // =================================================================
-/**
- * Récupère un enregistrement de transfert complet par son ID (tfID).
- * @param transfertId L'ID du Transfert (tfID).
- */
-export const getTransfertById = async (transfertId: string): Promise<TransfertLot> => {
-    try {
-        const response = await api.get(`/transfertlot/${transfertId}`);
-        return response.data;
-    } catch (error) {
-        throw handleNetworkError(error, 'getTransfertById');
-    }
-};
 
 
 /**
  * Valide la réception d'un lot.
- * @param id L'ID du transfert (GUID) (tfID).
+ * @param id L'ID du lot.
  * @param data Les données du formulaire de réception.
  */
 export const validerReception = async (id: string, data: ReceptionData): Promise<any> => {
     try {
         const response = await api.put(`/transfertlot/${id}/reception`, data);
         return response.data;
-    } catch (error) {
+    } catch (error: { response?: { data?: { message?: string, title?: string } }, message?: string }) {
         // --- MODIFICATION --- : Ajout du contexte
         // Affiche l'erreur de validation de l'API (ex: "Prière vérifier le magasin...")
         const serverMessage = error.response?.data?.message || error.response?.data?.title || error.message;
