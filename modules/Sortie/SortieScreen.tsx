@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { View, FlatList, ActivityIndicator, Text } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+// MODIFICATION: Import de useIsFocused
+import { useNavigation, useIsFocused } from '@react-navigation/native'; 
 import { Colors, Styles } from '../../styles/style';
 import LotCard from '../Shared/components/LotCard'; // Composant partagé
 import Filtre, { LotFilters } from '../Shared/components/Filtre'; // Composant partagé
@@ -15,6 +16,8 @@ const SortieScreen = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [filters, setFilters] = useState<LotFilters>({});
   const navigation = useNavigation();
+  // MODIFICATION: Ajout du hook useIsFocused
+  const isFocused = useIsFocused();
 
   const defaultFilters = useMemo(() => {
     if (user?.magasinID) {
@@ -47,8 +50,13 @@ const SortieScreen = () => {
       }
     };
 
-    fetchLots();
-  }, [filters]);
+    // MODIFICATION:
+    // Ne déclenche le fetch que si l'écran est actuellement "focus"
+    // Cela permet le rafraîchissement au retour de TransfertScreen
+    if (isFocused) {
+      fetchLots();
+    }
+  }, [filters, isFocused]); // MODIFICATION: Ajout de isFocused comme dépendance
   
   /**
    * Navigue vers l'écran de transfert en passant l'objet StockLot complet.
@@ -133,4 +141,3 @@ const SortieScreen = () => {
 };
 
 export default SortieScreen;
-

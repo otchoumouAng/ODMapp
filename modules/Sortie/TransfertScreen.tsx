@@ -21,7 +21,8 @@ type TransfertScreenRouteParams = { item: StockLot };
 const SACS_PAR_PALETTE = 40; // uniquement pour l’arrondi « palettes »
 
 /* ----------  UTILITAIRES  ---------- */
-const formatNumber = (n: number) => parseFloat(n.toFixed(2)).toString();
+// --- MODIFICATION: 'formatNumber' (qui gardait les décimales) est supprimé ---
+// const formatNumber = (n: number) => parseFloat(n.toFixed(2)).toString();
 
 const InfoRow = ({ label, value }: { label: string; value: any }) => (
   <View style={localStyles.infoRow}>
@@ -52,8 +53,8 @@ const TransfertScreen = () => {
 
   /* --- Données référentielles --- */
   const [magasins, setMagasins] = useState<Magasin[]>([]);
-  const [mouvementTypes, setMouvementTypes] = useState<DropdownItem[]>([]);
-  const [mouvementTypeID, setMouvementTypeID] = useState<string>('');
+  // const [mouvementTypes, setMouvementTypes] = useState<DropdownItem[]>([]); // Masqué
+  const [mouvementTypeID, setMouvementTypeID] = useState<string>(''); // Toujours utilisé
   const [campagneActuelle, setCampagneActuelle] = useState<string>('');
   const [detailedLot, setDetailedLot] = useState<LotDetail | null>(null);
 
@@ -75,18 +76,23 @@ const TransfertScreen = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [mags, params, lot, mvts] = await Promise.all([
+        // Ne charge plus les mouvementTypes, mais garde l'ID de sortie (30)
+        const [mags, params, lot] = await Promise.all([
           getMagasins(),
           getParametres(),
           getLotById(item.lotID),
-          getMouvementStockTypes(),
+          // getMouvementStockTypes(), // Appel retiré
         ]);
         setMagasins(mags.filter((m: Magasin) => m.id !== user?.magasinID));
         setCampagneActuelle(params.campagne);
         setDetailedLot(lot);
-        setMouvementTypes(mvts);
-        const sortie = mvts.find((m: DropdownItem) => m.id === 30);
-        if (sortie) setMouvementTypeID(sortie.id.toString());
+        // setMouvementTypes(mvts); // Retiré
+        
+        // Définit l'ID du mouvement de sortie (30) en dur pour le système
+        // const sortie = mvts.find((m: DropdownItem) => m.id === 30);
+        // if (sortie) setMouvementTypeID(sortie.id.toString());
+        setMouvementTypeID('30'); // ID pour 'Sortie'
+
       } catch (err: any) {
         Alert.alert('Erreur de chargement', err.message || 'Impossible de charger les données.');
         navigation.goBack();
@@ -98,40 +104,57 @@ const TransfertScreen = () => {
   }, [item.lotID, user, navigation]);
 
   /* =========================================================
-   * 2. Mode « TOTAL » → valeurs complètes du lot
+   * 2. Mode « TOTAL » → MÀJ du nombre de sacs
    * ======================================================= */
   useEffect(() => {
-    if (transfertMode !== 'total' || !detailedLot) return;
+    // Si on est en mode 'total', on force le nombre de sacs à être la quantité en stock.
+    // Le calcul (poids, tares) sera géré par l'autre useEffect qui écoute 'nombreSacs'.
+    if (transfertMode !== 'total' || !detailedLot || !item) return;
 
     setNombreSacs(item.quantite);
-    setPoidsBrut(formatNumber(item.poidsBrut));
-    setPoidsNet(formatNumber(item.poidsNetAccepte));
-    setTareSacs(formatNumber(detailedLot.tareSacs));
-    setTarePalettes(formatNumber(detailedLot.tarePalettes));
-    setNombrePalettes(Math.ceil(item.quantite / SACS_PAR_PALETTE).toString());
+    // Les autres calculs (poids, net, tares) sont retirés d'ici
+    // pour centraliser la logique de calcul.
+    
   }, [transfertMode, item, detailedLot]);
 
   /* =========================================================
-   * 3. Mode « PARTIEL » → calculs AU PRORATA
+   * 3. Mode « PARTIEL » ET CALCULS → Logique unifiée
    * ======================================================= */
   useEffect(() => {
-    if (transfertMode !== 'partiel' || !detailedLot) return;
+    // Ce hook gère TOUS les calculs au pro rata.
+    // Il se déclenche si 'detailedLot' charge, ou si 'nombreSacs' change
+    // (soit par l'utilisateur en mode partiel, soit par le hook "Total").
+    
+    if (!detailedLot) return; // Ne pas calculer si les données de base ne sont pas là
 
     const q = nombreSacs ?? 0;
-    const Q = detailedLot.nombreSacs || 1; // sécurité division
-    const ratio = q / Q;
+    
+    // Q est la quantité *originale* du lot (source de vérité pour le pro rata)
+    const Q_original = detailedLot.nombreSacs || 1; 
+    const ratio = q / Q_original;
 
+    // Tous les calculs sont basés sur 'detailedLot' (le lot original)
     const brut = ratio * detailedLot.poidsBrut;
     const tSacs = ratio * detailedLot.tareSacs;
     const tPal = ratio * detailedLot.tarePalettes;
-    const net = brut - tSacs - tPal;
+    
+    // --- MODIFICATION: Arrondir à l'entier le plus proche ---
+    const brutArrondi = Math.round(brut);
+    const tSacsArrondi = Math.round(tSacs);
+    const tPalArrondi = Math.round(tPal);
+    
+    // Recalculer le net à partir des valeurs arrondies pour garantir la cohérence
+    const netArrondi = brutArrondi - tSacsArrondi - tPalArrondi; 
 
-    setPoidsBrut(formatNumber(brut));
-    setTareSacs(formatNumber(tSacs));
-    setTarePalettes(formatNumber(tPal));
-    setPoidsNet(formatNumber(net));
+    setPoidsBrut(brutArrondi.toString());
+    setTareSacs(tSacsArrondi.toString());
+    setTarePalettes(tPalArrondi.toString());
+    setPoidsNet(netArrondi.toString());
+    
+    // Le nombre de palettes est purement indicatif
     setNombrePalettes(Math.ceil(q / SACS_PAR_PALETTE).toString());
-  }, [nombreSacs, transfertMode, detailedLot]);
+    
+  }, [nombreSacs, detailedLot]); // 'transfertMode' est retiré, ce hook écoute 'nombreSacs'
 
   /* =========================================================
    * 4. Gestion destination forcée export
@@ -146,6 +169,7 @@ const TransfertScreen = () => {
    * ======================================================= */
   const handleTransfert = async () => {
     /* ----- validations ----- */
+    // Validation sur mouvementTypeID est toujours active, même si le champ est masqué
     if (!operationType || !transfertMode || !numBordereau.trim() || !mouvementTypeID) {
       Alert.alert('Validation', 'Veuillez remplir tous les champs obligatoires (*).');
       return;
@@ -159,6 +183,8 @@ const TransfertScreen = () => {
       return;
     }
     const sacsATransferer = Number(nombreSacs);
+    // La validation (q > item.quantite) est déjà gérée par handleSacsChange
+    // mais on garde une sécurité
     if (!sacsATransferer || sacsATransferer <= 0 || sacsATransferer > item.quantite) {
       Alert.alert('Validation', `Le nombre de sacs doit être > 0 et ≤ ${item.quantite}.`);
       return;
@@ -189,9 +215,10 @@ const TransfertScreen = () => {
       magReceptionTheoID: parseInt(destinationMagasinId, 10) || 0,
       modeTransfertID: transfertMode === 'total' ? 1 : 2,
       typeOperationID: operationType === 'transfert' ? 1 : operationType === 'empotage' ? 2 : 3,
-      mouvementTypeID: parseInt(mouvementTypeID, 10),
+      mouvementTypeID: parseInt(mouvementTypeID, 10), // Toujours '30'
       statut: 'NA',
       sacTypeID: 1,
+      // Les valeurs arrondies (format string) sont parsées
       nombrePaletteExpedition: parseInt(nombrePalettes, 10) || 0,
       poidsBrutExpedition: parseFloat(poidsBrut) || 0,
       poidsNetExpedition: parseFloat(poidsNet) || 0,
@@ -202,13 +229,38 @@ const TransfertScreen = () => {
     try {
       await createTransfert(dto);
       Toast.show({ type: 'success', text1: 'Opération réussie', text2: `Sortie du lot ${item.reference} validée.` });
-      navigation.goBack();
+      navigation.goBack(); // C'est ici que SortieScreen doit se rafraîchir
     } catch (err: any) {
       Alert.alert("Échec de l'opération", err.message || 'Erreur inattendue.');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  // --- MODIFICATION: Handler pour le champ NombreSacs ---
+  const handleSacsChange = (txt: string) => {
+    if (txt === '') {
+        setNombreSacs(undefined);
+        return;
+    }
+    let q = parseInt(txt.replace(/[^0-9]/g, ''), 10);
+    const qMax = item.quantite; // Limite max (quantité en stock)
+
+    if (isNaN(q)) {
+        setNombreSacs(undefined);
+    } else if (q > qMax) {
+        q = qMax; // Plafonne à la quantité max
+        Toast.show({
+            type: 'info',
+            text1: 'Quantité Maximale Atteinte',
+            text2: `Il ne reste que ${qMax} sacs en stock.`,
+            position: 'bottom'
+        });
+    }
+    
+    setNombreSacs(q);
+  };
+
 
   /* =========================================================
    * 6. Rendu
@@ -258,7 +310,11 @@ const TransfertScreen = () => {
                 <Picker.Item label="Sortie pour export" value="export" />
               </Picker>
             </View>
-
+            
+            {/* MODIFICATION: Champ "Type de Mouvement" masqué pour l'utilisateur.
+              La valeur est gérée en interne (ID 30).
+            */}
+            {/*
             <FormLabel text="Type de Mouvement *" />
             <View style={localStyles.pickerContainer}>
               <Picker selectedValue={mouvementTypeID} onValueChange={setMouvementTypeID} style={localStyles.pickerText}>
@@ -268,6 +324,7 @@ const TransfertScreen = () => {
                 ))}
               </Picker>
             </View>
+            */}
 
             <FormLabel text={operationType === 'export' ? 'Destination' : 'Destination *'} />
             {operationType === 'transfert' || operationType === 'empotage' ? (
@@ -312,7 +369,8 @@ const TransfertScreen = () => {
             <CustomTextInput
               placeholder="Saisir le nombre de sacs"
               value={nombreSacs?.toString() || ''}
-              onChangeText={(txt) => setNombreSacs(txt ? parseInt(txt.replace(/[^0-9]/g, ''), 10) : undefined)}
+              // --- MODIFICATION: Utilisation du handler ---
+              onChangeText={handleSacsChange}
               editable={isEditable}
               keyboardType="numeric"
               style={[!isEditable ? localStyles.disabledInput : {}, localStyles.inputMargin]}

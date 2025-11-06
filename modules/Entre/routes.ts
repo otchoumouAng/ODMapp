@@ -1,13 +1,13 @@
 import { api, handleNetworkError } from '../Shared/route';
 // Le type TransfertLot est défini dans un fichier partagé
 import { TransfertLot } from '../Shared/type'; 
-import { ReceptionData } from './type';
+// --- MODIFICATION --- : Importation du nouveau type
+import { ReceptionData, LotDetailReception } from './type';
 
 /**
  * Récupère la liste des lots en transit destinés au magasin de l'utilisateur.
- * @param magasinId L'ID du magasin de l'utilisateur connecté.
  */
-export const getLotsARecevoir = async (magasinId: number): Promise<TransfertLot[]> => {
+export const getLotsARecevoir = async (magasinId: number): Promise<any[]> => {
     try {
         const params = new URLSearchParams();
         params.append('magasinId', magasinId.toString());
@@ -20,9 +20,43 @@ export const getLotsARecevoir = async (magasinId: number): Promise<TransfertLot[
     }
 };
 
+// =================================================================
+// NOUVELLE FONCTION AJOUTÉE
+// =================================================================
+
+/**
+ * Récupère les détails complets d'un lot pour la réception.
+ * @param lotId L'ID du Lot (ltID).
+ */
+export const getLotDetailForReception = async (lotId: string): Promise<LotDetailReception> => {
+    try {
+        const response = await api.get(`/transfertlot/reception-detail/${lotId}`);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error, 'getLotDetailForReception');
+    }
+};
+
+// =================================================================
+// NOUVELLE FONCTION AJOUTÉE (Pour contourner le RowVersion)
+// =================================================================
+/**
+ * Récupère un enregistrement de transfert complet par son ID (tfID).
+ * @param transfertId L'ID du Transfert (tfID).
+ */
+export const getTransfertById = async (transfertId: string): Promise<TransfertLot> => {
+    try {
+        const response = await api.get(`/transfertlot/${transfertId}`);
+        return response.data;
+    } catch (error) {
+        throw handleNetworkError(error, 'getTransfertById');
+    }
+};
+
+
 /**
  * Valide la réception d'un lot.
- * @param id L'ID du transfert (GUID).
+ * @param id L'ID du transfert (GUID) (tfID).
  * @param data Les données du formulaire de réception.
  */
 export const validerReception = async (id: string, data: ReceptionData): Promise<any> => {

@@ -10,7 +10,9 @@ import { TransfertLot } from '../Shared/type';
 
 const EntreeScreen = () => {
     const { user } = useContext(AuthContext);
-    const [lots, setLots] = useState<TransfertLot[]>([]);
+    // 'lots' est de type 'any[]' ici car l'objet retourné par l'API (LotPourReceptionDto)
+    // ne correspond pas au type 'TransfertLot' (le modèle complet)
+    const [lots, setLots] = useState<any[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const navigation = useNavigation();
 
@@ -25,8 +27,28 @@ const EntreeScreen = () => {
                 setLoading(true);
                 try {
                     // Appelle l'API /api/transfertlot/entransit
+                    // La réponse est un 'LotPourReceptionDto[]' (pas un 'TransfertLot[]')
                     const data = await getLotsARecevoir(user.magasinID);
-                    setLots(data);
+                    
+                    // --- 1. Filtrer les lots sans numeroLot ---
+                    const filteredData = data.filter(lot => lot.numeroLot && lot.numeroLot.trim() !== '');
+                    
+                    // --- 2. MODIFICATION : Dédupliquer les lots par ID ---
+                    // Résout l'erreur "Encountered two children with the same key"
+                    // Crée un Map pour ne garder que la première occurrence de chaque ID
+                    const uniqueLotsMap = new Map();
+                    filteredData.forEach(lot => {
+                        if (!uniqueLotsMap.has(lot.id)) {
+                            uniqueLotsMap.set(lot.id, lot);
+                        }
+                    });
+                    
+                    // Convertit le Map en Array
+                    const uniqueData = Array.from(uniqueLotsMap.values());
+                    // --- FIN DE LA MODIFICATION ---
+
+                    setLots(uniqueData); // Utilise les données dédupliquées
+                    
                 } catch (error: any) {
                     Alert.alert("Erreur", error.message || "Impossible de charger les lots à recevoir.");
                 } finally {
@@ -37,8 +59,9 @@ const EntreeScreen = () => {
         }, [user])
     );
 
-    const handleCardPress = (item: TransfertLot) => {
-        // Navigue vers l'écran de formulaire en passant l'objet TransfertLot complet
+    const handleCardPress = (item: any) => {
+        // Navigue vers l'écran de formulaire en passant l'objet 'item' (LotPourReceptionDto)
+        // 'ReceptionScreen' n'utilisera que 'item.id' (le ltID)
         navigation.navigate('ReceptionScreen', { item });
     };
 
@@ -51,47 +74,57 @@ const EntreeScreen = () => {
             <FlatList
                 data={lots}
                 renderItem={({ item }) => (
-                    // --- MODIFICATION --- : Mappage complet vers le LotCard
-                    // Le LotCard attend un type 'Lot', nous mappons 'TransfertLot' vers 'Lot'
+                    // --- Mappage Corrigé ---
+                    // Nous mappons les champs de 'LotPourReceptionDto' (l'API)
+                    // vers ce que 'LotCard' attend (le type 'Lot')
                     <LotCard 
                         item={{
-                            id: item.id, // ID du transfert (GUID)
+                            id: item.id, // ID du Lot (ltID)
                             numeroLot: item.numeroLot,
-                            poidsNet: item.poidsNetExpedition ?? 0,
-                            exportateurNom: item.exportateurNom ?? 'N/A',
-                            statut: item.statut, // Statut du transfert (ex: 'NA')
+                            
+                            // --- CORRECTION DU BUG ---
+                            // L'API renvoie 'poidsNet', pas 'poidsNetExpedition'
+                            poidsNet: item.poidsNet ?? 0, 
+                            nombreSacs: item.nombreSacs ?? 0,
+                            poidsBrut: item.poidsBrut ?? 0,
+                            tareSacs: item.tareSacs ?? 0,
+                            tarePalettes: item.tarePalettes ?? 0,
+                            
+                            // L'API 'entransit' ne renvoie pas l'exportateur
+                            // On met 'N/A' pour correspondre au screenshot
+                            exportateurNom: 'N/A', 
+                            exportateurID: 0,
+                            
+                            statut: item.statut, // Statut du transfert (ex: 'AP')
                             campagneID: item.campagneID,
                             dateLot: item.dateExpedition, // La date pertinente est la date d'expédition
-                            nombreSacs: item.nombreSacsExpedition ?? 0,
-                            poidsBrut: item.poidsBrutExpedition ?? 0,
-                            exportateurID: item.exportateurID,
-
+                            
                             // --- Champs requis par 'Lot' (type du LotCard) ---
                             // Fournir des valeurs par défaut
                             typeLotID: 0,
                             typeLotDesignation: "Transfert",
                             certificationID: 0,
-                            certificationDesignation: "N/A",
+                            certificationDesignation: "N/A", // Ceci s'affiche en 'N/A'
                             productionID: '', 
                             numeroProduction: '',
-                            tareSacs: item.tareSacsExpedition ?? 0,
-                            tarePalettes: item.tarePaletteExpedition ?? 0,
                             estQueue: false,
                             estManuel: false,
                             estReusine: false,
                             desactive: false,
-                            creationUtilisateur: item.creationUtilisateur,
-                            creationDate: item.creationDate,
-                            rowVersionKey: item.rowVersionKey, 
+                            creationUtilisateur: '', // Non fourni par l'API 'entransit'
+                            creationDate: item.dateExpedition, // Utilise dateExpedition comme fallback
+                            rowVersionKey: null, // Non fourni par l'API 'entransit'
                             estQueueText: 'No',
                             estManuelText: 'Yes',
                             estReusineText: 'No',
                             estFictif: false,
                         }}
                         onPress={() => handleCardPress(item)}
+                        // --- Appliquer le style "entrée" (vert) ---
+                        movementType="entree"
                     />
                 )}
-                keyExtractor={(item) => item.id} // L'ID du transfert est unique
+                keyExtractor={(item) => item.id} // L'ID du lot (ltID) est unique
                 contentContainerStyle={Styles.list}
                 ListEmptyComponent={<Text style={Styles.emptyText}>Aucun lot en attente de réception.</Text>}
             />

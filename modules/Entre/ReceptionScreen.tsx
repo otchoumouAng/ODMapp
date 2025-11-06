@@ -4,17 +4,16 @@ import {
     ActivityIndicator, SafeAreaView, KeyboardAvoidingView, Platform
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-// Il n'y a plus besoin de Picker ici, on peut le supprimer
-// import { Picker } from '@react-native-picker/picker'; 
 import { AuthContext } from '../../contexts/AuthContext';
 import { Styles, Colors } from '../../styles/style';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { TransfertLot, DropdownItem } from '../Shared/type';
-import { ReceptionData } from './type';
-import { validerReception } from './routes';
+import { LotDetailReception, ReceptionData } from './type';
+// --- MODIFICATION --- : Importation de la nouvelle fonction
+import { validerReception, getLotDetailForReception, getTransfertById } from './routes';
 import { getMouvementStockTypes } from '../Shared/route';
 import CustomTextInput from '../Shared/components/CustomTextInput';
 
+// (Composants InfoRow et FormLabel inchangés)
 const InfoRow = ({ label, value }: { label: string, value: any }) => (
     <View style={localStyles.infoRow}>
         <Text style={localStyles.infoLabel}>{label}</Text>
@@ -22,7 +21,6 @@ const InfoRow = ({ label, value }: { label: string, value: any }) => (
     </View>
 );
 
-// Ajout du composant FormLabel (si vous ne l'avez pas dans un fichier partagé)
 const FormLabel = ({ text }: { text: string }) => (
     <Text style={localStyles.formLabel}>{text}</Text>
 );
@@ -31,67 +29,88 @@ const ReceptionScreen = () => {
     const route = useRoute();
     const navigation = useNavigation();
     const { user } = useContext(AuthContext);
-    const { item } = route.params as { item: TransfertLot };
-
-    // --- LOGIQUE MISE À JOUR (INCHANGÉE) ---
-    // Les états sont toujours nécessaires pour être envoyés à l'API,
-    // même s'ils ne sont plus affichés dans des inputs.
-    const [numBordereau] = useState(item.numBordereauExpedition ?? '');
-    const [tracteur] = useState(item.immTracteurExpedition ?? '');
-    const [remorque] = useState(item.immRemorqueExpedition ?? '');
-    const [nombreSacs] = useState(item.nombreSacsExpedition?.toString() ?? '0');
-    const [nombrePalettes] = useState(item.nombrePaletteExpedition?.toString() ?? '0');
-    const [poidsBrut] = useState(item.poidsBrutExpedition?.toString() ?? '0');
-    const [poidsNet] = useState(item.poidsNetExpedition?.toString() ?? '0');
-    const [tareSacs] = useState(item.tareSacsExpedition?.toString() ?? '0');
-    const [tarePalettes] = useState(item.tarePaletteExpedition?.toString() ?? '0');
     
-    // Le seul champ éditable
-    const [commentaire, setCommentaire] = useState('');
+    // 'item' est l'objet de la liste (LotPourReceptionDto)
+    const { item } = route.params as { item: any }; 
+    
+    // ltID (ID du Lot)
+    const [lotId] = useState<string>(item.id); 
 
+    // Données chargées depuis /reception-detail
+    const [detailData, setDetailData] = useState<LotDetailReception | null>(null);
+    
+    // tfID (ID du Transfert)
+    const [transfertId, setTransfertId] = useState<string | null>(null); 
+    
+    // --- MODIFICATION ---
+    // Le RowVersion est maintenant stocké séparément
+    const [correctRowVersion, setCorrectRowVersion] = useState<any>(null);
+
+    // États du formulaire
+    const [commentaire, setCommentaire] = useState('');
     const [mouvementTypeID, setMouvementTypeID] = useState<string>('');
-    const [mouvementTypeNom, setMouvementTypeNom] = useState<string>('Chargement...'); // Pour l'affichage
+    const [mouvementTypeNom, setMouvementTypeNom] = useState<string>('Chargement...'); 
     
     const [loading, setLoading] = useState(true); 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Étape 1: Chargement des données au démarrage
     useEffect(() => {
-        const loadMouvementTypes = async () => {
+        const loadAllData = async () => {
             setLoading(true);
             try {
-                const data = await getMouvementStockTypes();
-                const defaultReceptionType = data.find(m => m.id === 31);
+                // 1. Charger les détails du lot (via V4_Lot_GetForReception)
+                // (Ceci nous donne les données d'affichage et le tfID)
+                const details = await getLotDetailForReception(lotId);
+                setDetailData(details);
+                setTransfertId(details.idTransfert); // Stocke le tfID
+
+                // 2. Charger l'enregistrement de transfert (via V5_Transfert_Lot_Select)
+                // (Ceci nous donne le *bon* RowVersionKey)
+                const transfertData = await getTransfertById(details.idTransfert);
+                setCorrectRowVersion(transfertData.rowVersionKey); // Stocke le bon RowVersion
+
+                // 3. Charger les types de mouvement
+                const typesMvt = await getMouvementStockTypes();
+                const defaultReceptionType = typesMvt.find(m => m.id === 31);
                 
                 if (defaultReceptionType) {
                     setMouvementTypeID(defaultReceptionType.id.toString());
-                    setMouvementTypeNom(defaultReceptionType.designation); // Stocker le nom
+                    setMouvementTypeNom(defaultReceptionType.designation); 
                 } else {
-                    Alert.alert("Erreur de configuration", "Type de mouvement '31' introuvable.");
-                    if (data.length > 0) {
-                        setMouvementTypeID(data[0].id.toString());
-                        setMouvementTypeNom(data[0].designation);
+                    Alert.alert("Erreur de config", "Type de mouvement '31' introuvable.");
+                    if (typesMvt.length > 0) {
+                        setMouvementTypeID(typesMvt[0].id.toString());
+                        setMouvementTypeNom(typesMvt[0].designation);
                     }
                 }
-            } catch (error) {
-                console.error("Failed to load mouvement types:", error);
-                Alert.alert("Erreur", "Impossible de charger les types de mouvements.");
-                setMouvementTypeNom('Erreur');
+            } catch (error: any) {
+                console.error("Failed to load data:", error);
+                Alert.alert("Erreur de chargement", error.message || "Impossible de charger les données.");
+                navigation.goBack();
             } finally {
                 setLoading(false);
             }
         };
-        loadMouvementTypes();
-    }, []);
+        loadAllData();
+    }, [lotId, navigation]);
 
 
+    // Étape 2: Validation
     const handleValidation = async () => {
         if (!user || !user.magasinID || !user.locationID || !user.name) {
             Alert.alert("Erreur d'utilisateur", "Vos informations utilisateur sont incomplètes.");
             return;
         }
         
-        if (!mouvementTypeID) {
-            Alert.alert("Patientez", "Le type de mouvement est en cours de chargement.");
+        if (!transfertId || !correctRowVersion) { // Vérifie les deux
+            Alert.alert("Erreur", "Données de transfert ou de version manquantes. Les données n'ont peut-être pas chargé.");
+            setIsSubmitting(false);
+            return;
+        }
+        
+        if (!mouvementTypeID || !detailData) {
+            Alert.alert("Patientez", "Les données ne sont pas encore prêtes.");
             return;
         }
 
@@ -101,24 +120,31 @@ const ReceptionScreen = () => {
             dateReception: new Date().toISOString(),
             destinationID: user.magasinID,
             modificationUser: user.name,
-            numBordereauRec: numBordereau.trim(),
-            immTracteurRec: tracteur.trim(),
-            immRemorqueRec: remorque.trim(),
-            nombreSac: parseInt(nombreSacs, 10) || 0,
-            nombrePalette: parseInt(nombrePalettes, 10) || 0,
-            poidsBrut: parseFloat(poidsBrut) || 0,
-            poidsNetRecu: parseFloat(poidsNet) || 0,
-            tareSacRecu: parseFloat(tareSacs) || 0,
-            tarePaletteArrive: parseFloat(tarePalettes) || 0,
+            
+            numBordereauRec: detailData.bordereauExpedition ?? '',
+            immTracteurRec: detailData.immTracteurExpedition ?? '',
+            immRemorqueRec: detailData.immRemorqueExpedition ?? '',
+            nombreSac: detailData.nombreSacs ?? 0,
+            nombrePalette: detailData.nombrePalette ?? 0,
+            poidsBrut: detailData.poidsBrut ?? 0,
+            poidsNetRecu: detailData.poidsNet ?? 0,
+            tareSacRecu: detailData.tareSacs ?? 0,
+            tarePaletteArrive: detailData.tarePalettes ?? 0,
+            
             mouvementTypeId: parseInt(mouvementTypeID, 10),
             commentaireRec: commentaire.trim(),
             statut: 'RE',
-            rowVersionKey: item.rowVersionKey,
+            
+            // --- MODIFICATION ---
+            // On utilise le RowVersion que nous avons chargé séparément
+            rowVersionKey: correctRowVersion,
         };
 
         try {
-            await validerReception(item.id, receptionData);
-            Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${item.numeroLot} est entré en stock.` });
+            // On appelle l'API avec 'transfertId' (tfID)
+            await validerReception(transfertId, receptionData);
+            
+            Toast.show({ type: 'success', text1: 'Opération Réussie', text2: `Le lot ${detailData.numeroLot} est entré en stock.` });
             navigation.goBack();
         } catch (receptionError: any) {
             const errorMessage = receptionError.message || 'Erreur inconnue';
@@ -128,17 +154,17 @@ const ReceptionScreen = () => {
         }
     };
 
-    // --- LE Rendu "Ouf" ---
 
-    if (loading) {
+    if (loading || !detailData) { // Afficher le loader tant que detailData est null
         return (
             <View style={[localStyles.pageContainer, localStyles.loaderContainer]}>
                 <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={Styles.loadingText}>Chargement des données...</Text>
+                <Text style={Styles.loadingText}>Chargement des détails...</Text>
             </View>
         );
     }
 
+    // Le rendu (inchangé)
     return (
         <SafeAreaView style={localStyles.pageContainer}>
             <KeyboardAvoidingView
@@ -151,40 +177,33 @@ const ReceptionScreen = () => {
                     keyboardShouldPersistTaps="handled"
                 >
                     <Text style={Styles.modalTitle}>RÉCEPTION DU LOT</Text>
-                    <Text style={localStyles.lotNumberHeader}>{item.numeroLot}</Text>
+                    <Text style={localStyles.lotNumberHeader}>{detailData.numeroLot}</Text>
                     
-                    {/* --- CARTE 1 : Infos Expédition --- */}
                     <View style={localStyles.sectionContainer}>
                         <Text style={localStyles.sectionTitle}>Détails de l'Expédition</Text>
-                        <InfoRow label="Magasin Expéditeur" value={item.magasinExpeditionNom} />
-                        <InfoRow label="N° Bordereau Exp." value={item.numBordereauExpedition} />
-                        <InfoRow label="Tracteur Exp." value={item.immTracteurExpedition} />
-                        <InfoRow label="Remorque Exp." value={item.immRemorqueExpedition} />
+                        <InfoRow label="Magasin Expéditeur" value={detailData.magasinNom} />
+                        <InfoRow label="N° Bordereau Exp." value={detailData.bordereauExpedition} />
+                        <InfoRow label="Tracteur Exp." value={detailData.immTracteurExpedition} />
+                        <InfoRow label="Remorque Exp." value={detailData.immRemorqueExpedition} />
                     </View>
 
-                    {/* --- CARTE 2 : Données de Réception (Confirmées) --- */}
-                    {/* C'est ici le "Ouf". Fini les inputs grisés ! */}
                     <View style={localStyles.sectionContainer}>
                         <Text style={localStyles.sectionTitle}>Données à Confirmer</Text>
                         <InfoRow label="Type de Mouvement" value={mouvementTypeNom} />
-                        <InfoRow label="Nombre de sacs" value={nombreSacs} />
-                        <InfoRow label="Nombre de palettes" value={nombrePalettes} />
+                        <InfoRow label="Nombre de sacs" value={detailData.nombreSacs} />
+                        <InfoRow label="Nombre de palettes" value={detailData.nombrePalette} />
                         
-                        {/* Séparateur visuel */}
                         <View style={localStyles.separator} /> 
                         
-                        <InfoRow label="Poids Brut" value={`${poidsBrut} kg`} />
-                        <InfoRow label="Tare Sacs" value={`${tareSacs} kg`} />
-                        <InfoRow label="Tare Palettes" value={`${tarePalettes} kg`} />
+                        <InfoRow label="Poids Brut" value={`${detailData.poidsBrut} kg`} />
+                        <InfoRow label="Tare Sacs" value={`${detailData.tareSacs} kg`} />
+                        <InfoRow label="Tare Palettes" value={`${detailData.tarePalettes} kg`} />
                         
-                         {/* Séparateur visuel */}
                         <View style={localStyles.separator} /> 
 
-                        {/* Mise en avant du Poids Net */}
-                        <InfoRow label="Poids Net Réception" value={poidsNet} /> 
+                        <InfoRow label="Poids Net Réception" value={detailData.poidsNet} /> 
                     </View>
 
-                    {/* --- CARTE 3 : Seul champ éditable --- */}
                     <View style={localStyles.sectionContainer}>
                          <Text style={localStyles.sectionTitle}>Commentaire</Text>
                         <FormLabel text="Ajouter une note (optionnel)" />
@@ -199,7 +218,6 @@ const ReceptionScreen = () => {
 
                 </ScrollView>
                 
-                {/* --- FOOTER D'ACTION (Sticky) --- */}
                 <View style={localStyles.footerContainer}>
                     <View style={localStyles.footerButtonWrapper}>
                         <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} disabled={isSubmitting} />
@@ -214,7 +232,7 @@ const ReceptionScreen = () => {
     );
 };
 
-// --- STYLES "OUF" (Réutilisés de TransfertScreen) ---
+// (Les styles localStyles sont inchangés)
 const localStyles = StyleSheet.create({
     pageContainer: {
         flex: 1,
@@ -274,7 +292,7 @@ const localStyles = StyleSheet.create({
     infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingVertical: 10, // Plus d'espace
+        paddingVertical: 10, 
         alignItems: 'center',
     },
     infoLabel: {
@@ -283,10 +301,10 @@ const localStyles = StyleSheet.create({
     },
     infoValue: {
         fontSize: 16,
-        fontWeight: 'bold', // Rendre la valeur plus visible
+        fontWeight: 'bold', 
         color: Colors.dark,
         textAlign: 'right',
-        flexShrink: 1, // Permet au texte de passer à la ligne si trop long
+        flexShrink: 1, 
     },
     formLabel: {
         fontSize: 15,
@@ -295,34 +313,10 @@ const localStyles = StyleSheet.create({
         marginBottom: 8,
         marginLeft: 2,
     },
-    // NOUVEAU STYLE pour séparer les groupes d'infos
     separator: {
         height: 1,
         backgroundColor: '#f0f0f0',
         marginVertical: 8,
-    },
-    
-    // Styles pour les champs désactivés (PLUS UTILISÉS ICI, mais gardés au cas où)
-    disabledInput: {
-        backgroundColor: '#e9ecef',
-        color: '#6c757d',
-        borderRadius: 5,
-        marginBottom: 15,
-    },
-    disabledPicker: {
-        backgroundColor: '#e9ecef',
-        borderRadius: 5,
-        marginBottom: 15,
-    },
-    pickerContainer: {
-        borderColor: '#E3E3E3', 
-        borderWidth: 1,
-        borderRadius: 5,
-        marginBottom: 15,
-        justifyContent: 'center',
-    },
-    pickerText: {
-        color: Colors.textDark,
     },
 });
 

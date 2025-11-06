@@ -13,7 +13,7 @@ const getStatusStyle = (status: string) => {
     if (status === 'NA') {
         return { borderColor: '#007bff', statusText: 'Nouveau' };
     }
-     if (status === 'REC') {
+     if (status === 'RE') {
         return { borderColor: '#28a745', statusText: 'Reçu' };
     }
     return { borderColor: '#6c757d', statusText: status };
