@@ -222,7 +222,7 @@ const ReceptionScreen = () => {
                         <Button title="Annuler" onPress={() => navigation.goBack()} color={Colors.secondary} disabled={isSubmitting} />
                     </View>
                     <View style={localStyles.footerButtonWrapper}>
-                        <Button title="Valider Réception" onPress={handleValidation} color={Colors.primary} disabled={isSubmitting || loading} />
+                        <Button title="Valider" onPress={handleValidation} color={Colors.primary} disabled={isSubmitting || loading} />
                     </View>
                 </View>
 

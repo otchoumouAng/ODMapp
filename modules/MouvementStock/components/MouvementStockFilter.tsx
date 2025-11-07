@@ -169,9 +169,9 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
 
                     {/* --- BOUTONS MIS À JOUR --- */}
                     <View style={Styles.filterButtonContainer}>
-                        <Button title="Réinitialiser" onPress={onReset} color={Colors.danger} />
+                        <Button title="Réinitialiser" onPress={onReset} color={Colors.secondary} />
                         {/* --- NOUVEAU BOUTON "APPLIQUER" --- */}
-                        <Button title="Appliquer" onPress={handleApply} color={Colors.primary} />
+                        <Button title="Rafraichir" onPress={handleApply} color={Colors.primary} />
                     </View>
                 </ScrollView>
             )}

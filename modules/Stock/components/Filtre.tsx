@@ -123,8 +123,8 @@ const StockFiltre: React.FC<StockFiltreProps> = ({ initialFilters, onFilterChang
                     {renderPicker("Grades", filters.gradeLotID, (v) => handleValueChange('gradeLotID', v), grades, 'designation', 'id')}
                     
                     <View style={Styles.filterButtonContainer}>
-                        <Button title="Réinitialiser" onPress={handleResetFilters} color={Colors.danger} />
-                        <Button title="Appliquer" onPress={handleApplyFilters} color={Colors.primary}/>
+                        <Button title="Réinitialiser" onPress={handleResetFilters} color={Colors.secondary} />
+                        <Button title="Rafraichir" onPress={handleApplyFilters} color={Colors.primary}/>
                     </View>
                 </ScrollView>
             )}

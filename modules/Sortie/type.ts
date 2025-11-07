@@ -8,7 +8,7 @@
  */
 export interface StockLot {
   lotID: string; // GUID
-  reference: string;
+  numeroLot: string;
   magasinID: number;
   magasinNom: string;
   exportateurID: number;
@@ -16,6 +16,8 @@ export interface StockLot {
   quantite: number; // Stock dispo
   poidsBrut: number; // Poids brut du stock dispo
   poidsNetAccepte: number; // Poids net du stock dispo
+  tareSac: number;
+  tarePalette: number;
   produitID: number;
   libelleProduit: string;
   certificationID: number;

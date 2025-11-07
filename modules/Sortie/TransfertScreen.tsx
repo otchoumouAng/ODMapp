@@ -21,7 +21,6 @@ type TransfertScreenRouteParams = { item: StockLot };
 const SACS_PAR_PALETTE = 40; // uniquement pour l’arrondi « palettes »
 
 /* ----------  UTILITAIRES  ---------- */
-// --- MODIFICATION: 'formatNumber' (qui gardait les décimales) est supprimé ---
 // const formatNumber = (n: number) => parseFloat(n.toFixed(2)).toString();
 
 const InfoRow = ({ label, value }: { label: string; value: any }) => (
@@ -40,6 +39,8 @@ const TransfertScreen = () => {
   const route = useRoute<RouteProp<{ params: TransfertScreenRouteParams }>>();
   const navigation = useNavigation();
   const { user } = useContext(AuthContext);
+  
+  // 'item' EST LE STOCK DANS LE MAGASIN ACTUEL (Source de vérité pour les poids)
   const { item } = route.params;
 
   /* --- États formulaire --- */
@@ -53,9 +54,10 @@ const TransfertScreen = () => {
 
   /* --- Données référentielles --- */
   const [magasins, setMagasins] = useState<Magasin[]>([]);
-  // const [mouvementTypes, setMouvementTypes] = useState<DropdownItem[]>([]); // Masqué
   const [mouvementTypeID, setMouvementTypeID] = useState<string>(''); // Toujours utilisé
   const [campagneActuelle, setCampagneActuelle] = useState<string>('');
+  
+  // 'detailedLot' EST LE LOT ORIGINAL (Source de vérité pour les ratios de tare)
   const [detailedLot, setDetailedLot] = useState<LotDetail | null>(null);
 
   /* --- États UI --- */
@@ -76,21 +78,14 @@ const TransfertScreen = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        // Ne charge plus les mouvementTypes, mais garde l'ID de sortie (30)
         const [mags, params, lot] = await Promise.all([
           getMagasins(),
           getParametres(),
           getLotById(item.lotID),
-          // getMouvementStockTypes(), // Appel retiré
         ]);
         setMagasins(mags.filter((m: Magasin) => m.id !== user?.magasinID));
         setCampagneActuelle(params.campagne);
-        setDetailedLot(lot);
-        // setMouvementTypes(mvts); // Retiré
-        
-        // Définit l'ID du mouvement de sortie (30) en dur pour le système
-        // const sortie = mvts.find((m: DropdownItem) => m.id === 30);
-        // if (sortie) setMouvementTypeID(sortie.id.toString());
+        setDetailedLot(lot); // Charge les détails du lot original
         setMouvementTypeID('30'); // ID pour 'Sortie'
 
       } catch (err: any) {
@@ -109,41 +104,69 @@ const TransfertScreen = () => {
   useEffect(() => {
     // Si on est en mode 'total', on force le nombre de sacs à être la quantité en stock.
     // Le calcul (poids, tares) sera géré par l'autre useEffect qui écoute 'nombreSacs'.
-    if (transfertMode !== 'total' || !detailedLot || !item) return;
+    if (transfertMode !== 'total' || !item) return;
 
+    // 'item.quantite' est la quantité EN STOCK
     setNombreSacs(item.quantite);
-    // Les autres calculs (poids, net, tares) sont retirés d'ici
-    // pour centraliser la logique de calcul.
     
-  }, [transfertMode, item, detailedLot]);
+  }, [transfertMode, item]); // 'detailedLot' retiré des dépendances
 
   /* =========================================================
-   * 3. Mode « PARTIEL » ET CALCULS → Logique unifiée
+   * 3. CALCULS DE QUANTITÉ (LOGIQUE CORRIGÉE)
    * ======================================================= */
   useEffect(() => {
     // Ce hook gère TOUS les calculs au pro rata.
-    // Il se déclenche si 'detailedLot' charge, ou si 'nombreSacs' change
-    // (soit par l'utilisateur en mode partiel, soit par le hook "Total").
+    // Il se déclenche si les données (lot, item) chargent, ou si 'nombreSacs' change.
     
-    if (!detailedLot) return; // Ne pas calculer si les données de base ne sont pas là
+    // On a besoin de 'detailedLot' (pour les ratios de tare) 
+    // et 'item' (pour les poids en stock)
+    if (!detailedLot || !item) return; 
 
-    const q = nombreSacs ?? 0;
+    const q_transfert = nombreSacs ?? 0;
     
-    // Q est la quantité *originale* du lot (source de vérité pour le pro rata)
-    const Q_original = detailedLot.nombreSacs || 1; 
-    const ratio = q / Q_original;
+    // --- LOGIQUE CORRIGÉE ---
+    
+    // 1. Obtenir les données du STOCK (item)
+    // q_stock est la quantité *actuelle* dans ce magasin
+    const Q_stock = item.quantite || 1; // Sacs en stock (éviter division par 0)
+    const Brut_stock = item.poidsBrut ?? 0;
+    const Net_stock = item.poidsNetAccepte ?? 0;
+    // Tare totale *actuelle* en stock
+    const Tare_totale_stock = Brut_stock - Net_stock;
 
-    // Tous les calculs sont basés sur 'detailedLot' (le lot original)
-    const brut = ratio * detailedLot.poidsBrut;
-    const tSacs = ratio * detailedLot.tareSacs;
-    const tPal = ratio * detailedLot.tarePalettes;
+    // 2. Obtenir les ratios de TARE du LOT ORIGINAL (detailedLot)
+    // Nous avons besoin de 'detailedLot' pour savoir comment la tare totale est répartie
+    const T_sacs_original = detailedLot.tareSacs ?? 0;
+    const T_pal_original = detailedLot.tarePalettes ?? 0;
+    const T_total_original = T_sacs_original + T_pal_original;
     
-    // --- MODIFICATION: Arrondir à l'entier le plus proche ---
-    const brutArrondi = Math.round(brut);
-    const tSacsArrondi = Math.round(tSacs);
-    const tPalArrondi = Math.round(tPal);
+    // Ratio de [tare sac] / [tare totale]
+    const ratio_tare_sacs = (T_total_original > 0) ? (T_sacs_original / T_total_original) : 0;
+    // Ratio de [tare palette] / [tare totale]
+    const ratio_tare_palettes = (T_total_original > 0) ? (T_pal_original / T_total_original) : 0;
+
+    // 3. Calculer le ratio de transfert
+    // (sacs à transférer / sacs en stock)
+    const ratio_transfert = (Q_stock > 0) ? (q_transfert / Q_stock) : 0;
+
+    // 4. Calculer les poids à transférer
+    // Poids brut à sortir = ratio * Poids brut en stock
+    const brut_a_sortir = ratio_transfert * Brut_stock;
     
-    // Recalculer le net à partir des valeurs arrondies pour garantir la cohérence
+    // Tare totale à sortir = ratio * Tare totale en stock
+    const tare_totale_a_sortir = ratio_transfert * Tare_totale_stock;
+    
+    // 5. Répartir la tare totale à sortir en tares sacs/palettes
+    // On applique le ratio de tare du lot original à la tare totale en stock
+    const tSacs_a_sortir = tare_totale_a_sortir * ratio_tare_sacs;
+    const tPal_a_sortir = tare_totale_a_sortir * ratio_tare_palettes;
+
+    // 6. Arrondir les valeurs
+    const brutArrondi = Math.round(brut_a_sortir);
+    const tSacsArrondi = Math.round(tSacs_a_sortir);
+    const tPalArrondi = Math.round(tPal_a_sortir);
+    
+    // 7. Recalculer le Poids Net à partir des valeurs arrondies
     const netArrondi = brutArrondi - tSacsArrondi - tPalArrondi; 
 
     setPoidsBrut(brutArrondi.toString());
@@ -152,9 +175,9 @@ const TransfertScreen = () => {
     setPoidsNet(netArrondi.toString());
     
     // Le nombre de palettes est purement indicatif
-    setNombrePalettes(Math.ceil(q / SACS_PAR_PALETTE).toString());
+    setNombrePalettes(Math.ceil(q_transfert / SACS_PAR_PALETTE).toString());
     
-  }, [nombreSacs, detailedLot]); // 'transfertMode' est retiré, ce hook écoute 'nombreSacs'
+  }, [nombreSacs, detailedLot, item]); // 'item' est ajouté aux dépendances
 
   /* =========================================================
    * 4. Gestion destination forcée export
@@ -169,7 +192,6 @@ const TransfertScreen = () => {
    * ======================================================= */
   const handleTransfert = async () => {
     /* ----- validations ----- */
-    // Validation sur mouvementTypeID est toujours active, même si le champ est masqué
     if (!operationType || !transfertMode || !numBordereau.trim() || !mouvementTypeID) {
       Alert.alert('Validation', 'Veuillez remplir tous les champs obligatoires (*).');
       return;
@@ -183,8 +205,7 @@ const TransfertScreen = () => {
       return;
     }
     const sacsATransferer = Number(nombreSacs);
-    // La validation (q > item.quantite) est déjà gérée par handleSacsChange
-    // mais on garde une sécurité
+
     if (!sacsATransferer || sacsATransferer <= 0 || sacsATransferer > item.quantite) {
       Alert.alert('Validation', `Le nombre de sacs doit être > 0 et ≤ ${item.quantite}.`);
       return;
@@ -217,7 +238,7 @@ const TransfertScreen = () => {
       typeOperationID: operationType === 'transfert' ? 1 : operationType === 'empotage' ? 2 : 3,
       mouvementTypeID: parseInt(mouvementTypeID, 10), // Toujours '30'
       statut: 'NA',
-      sacTypeID: 1,
+      sacTypeID: 1, // TODO: A remplacer par le vrai SacTypeID si disponible
       // Les valeurs arrondies (format string) sont parsées
       nombrePaletteExpedition: parseInt(nombrePalettes, 10) || 0,
       poidsBrutExpedition: parseFloat(poidsBrut) || 0,
@@ -228,8 +249,8 @@ const TransfertScreen = () => {
 
     try {
       await createTransfert(dto);
-      Toast.show({ type: 'success', text1: 'Opération réussie', text2: `Sortie du lot ${item.reference} validée.` });
-      navigation.goBack(); // C'est ici que SortieScreen doit se rafraîchir
+      Toast.show({ type: 'success', text1: 'Opération réussie', text2: `Sortie du lot ${item.numeroLot} validée.` });
+      navigation.goBack(); 
     } catch (err: any) {
       Alert.alert("Échec de l'opération", err.message || 'Erreur inattendue.');
     } finally {
@@ -237,7 +258,6 @@ const TransfertScreen = () => {
     }
   };
   
-  // --- MODIFICATION: Handler pour le champ NombreSacs ---
   const handleSacsChange = (txt: string) => {
     if (txt === '') {
         setNombreSacs(undefined);
@@ -254,7 +274,7 @@ const TransfertScreen = () => {
             type: 'info',
             text1: 'Quantité Maximale Atteinte',
             text2: `Il ne reste que ${qMax} sacs en stock.`,
-            position: 'bottom'
+            position: 'top'
         });
     }
     
@@ -281,7 +301,7 @@ const TransfertScreen = () => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView style={localStyles.scrollContainer} contentContainerStyle={localStyles.scrollContent} keyboardShouldPersistTaps="handled">
           <Text style={Styles.modalTitle}>SORTIE DU LOT</Text>
-          <Text style={localStyles.lotNumberHeader}>{item.reference}</Text>
+          <Text style={localStyles.lotNumberHeader}>{item.numeroLot}</Text>
           <Text style={localStyles.campagneHeader}>Campagne : {campagneActuelle}</Text>
 
           {/* ----------  CARTE 1 : Infos Lot ---------- */}
@@ -310,21 +330,6 @@ const TransfertScreen = () => {
                 <Picker.Item label="Sortie pour export" value="export" />
               </Picker>
             </View>
-            
-            {/* MODIFICATION: Champ "Type de Mouvement" masqué pour l'utilisateur.
-              La valeur est gérée en interne (ID 30).
-            */}
-            {/*
-            <FormLabel text="Type de Mouvement *" />
-            <View style={localStyles.pickerContainer}>
-              <Picker selectedValue={mouvementTypeID} onValueChange={setMouvementTypeID} style={localStyles.pickerText}>
-                <Picker.Item label="Sélectionner un mouvement..." value="" enabled={false} style={{ color: '#999999' }} />
-                {mouvementTypes.map((m) => (
-                  <Picker.Item key={m.id} label={m.designation} value={m.id.toString()} />
-                ))}
-              </Picker>
-            </View>
-            */}
 
             <FormLabel text={operationType === 'export' ? 'Destination' : 'Destination *'} />
             {operationType === 'transfert' || operationType === 'empotage' ? (

@@ -45,7 +45,7 @@ const MouvementStockCard: React.FC<MouvementStockCardProps> = ({ item, onPress }
 
                 <View style={Styles.mouvementStockCardDetailsContainer}>
                     <View style={Styles.mouvementStockCardRow}>
-                        <Text style={Styles.mouvementStockCardTypeText} numberOfLines={1}>{item.mouvementTypeDesignation}</Text>
+                        <Text style={Styles.mouvementStockCardTypeText} numberOfLines={1}>{item.mouvementTypeDesignation+' - '+item.reference2}</Text>
                         <Text style={Styles.mouvementStockCardDateText}>{new Date(item.dateMouvement).toLocaleDateString()}</Text>
                     </View>
                     <View style={Styles.mouvementStockCardRow}>

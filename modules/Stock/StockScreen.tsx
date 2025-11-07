@@ -81,7 +81,7 @@ const StockScreen = () => {
 
   const summary = useMemo(() => {
     // Pour le résumé, nous devons d'abord dédoublonner les lots
-    const uniqueLots = Array.from(new Map(stockLots.map(lot => [lot.reference, lot])).values());
+    const uniqueLots = Array.from(new Map(stockLots.map(lot => [lot.numeroLot, lot])).values());
     return uniqueLots.reduce((acc, lot) => {
         acc.totalSacs += lot.quantite ?? 0;
         acc.totalPoidsNet += lot.poidsNetAccepte ?? 0;
@@ -125,7 +125,7 @@ const StockScreen = () => {
                 renderItem={({ item, index }) => (
                     <LotTableRow 
                         item={{
-                            numeroLot: item.reference, 
+                            numeroLot: item.numeroLot, 
                             nombreSacs: item.quantite ?? 0, 
                             poidsNet: item.poidsNetAccepte ?? 0
                         }} 
@@ -136,7 +136,7 @@ const StockScreen = () => {
                 // ## CORRECTION APPLIQUÉE ICI ##
                 // On crée une clé unique en combinant la référence avec les autres IDs.
                 keyExtractor={(item, index) => 
-                    `${item.reference}-${item.produitID}-${item.certificationID}-${item.gradeLotID}-${item.typeLotID}-${index}`
+                    `${item.numeroLot}-${item.produitID}-${item.certificationID}-${item.gradeLotID}-${item.typeLotID}-${index}`
                 }
                 ListHeaderComponent={<TableHeader />}
                 stickyHeaderIndices={[0]}

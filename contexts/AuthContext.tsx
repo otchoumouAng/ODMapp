@@ -22,7 +22,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
     inactivityTimer.current = setTimeout(() => {
       logout();
-    }, 900000); // 15 minutes 900000 - 5 minutes 300000
+    }, 600000); // 15 minutes 900000 - 5 minutes 300000
   };
 
   const resetInactivityTimer = () => {

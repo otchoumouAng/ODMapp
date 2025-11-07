@@ -95,7 +95,7 @@ const SortieScreen = () => {
                 // de 'StockLot' (utilisé ici).
                 item={{
                     id: item.lotID, // GUID
-                    numeroLot: item.reference,
+                    numeroLot: item.numeroLot,
                     poidsNet: item.poidsNetAccepte ?? 0,
                     exportateurNom: item.exportateurNom ?? 'N/A',
                     campagneID: item.campagneID,
