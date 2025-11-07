@@ -414,8 +414,8 @@ const TransfertScreen = () => {
   );
 };
 
-/* =========================================================
- * STYLES
+/* ========================================================
+ * STYLES ok
  * ======================================================= */
 const localStyles = StyleSheet.create({
   pageContainer: { flex: 1, backgroundColor: Colors.background || '#f4f7f8' },
