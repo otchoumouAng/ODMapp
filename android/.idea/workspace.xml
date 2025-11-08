@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9ea2b613-17ea-4346-8de8-0afcf3c27423" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../modules/Shared/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/../modules/Shared/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../modules/Sortie/TransfertScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/../modules/Sortie/TransfertScreen.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,7 +19,7 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[DeviceId(pluginId=LocalEmulator, isTemplate=false, identifier=path=C:\Users\HP\.android\avd\Medium_Phone.avd)]" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[]" />
   <component name="ExternalProjectsData">
     <projectState path="$PROJECT_DIR$">
       <ProjectState />
@@ -42,7 +46,7 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
-    "git-widget-placeholder": "lab6",
+    "git-widget-placeholder": "lab8",
     "last_opened_file_path": "E:/Odm/ODMApp/android"
   }
 }]]></component>

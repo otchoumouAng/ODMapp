@@ -82,6 +82,7 @@ export const getCertifications = () => getDropdownData('certification');
 export const getGrades = () => getDropdownData('grade');
 export const getLotTypes = () => getDropdownData('lottype');
 export const getProduits = () => getDropdownData('produit');
+export const getOperationType = () => getDropdownData('operationType');
 
 
 /**
