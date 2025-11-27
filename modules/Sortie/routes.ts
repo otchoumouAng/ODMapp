@@ -27,16 +27,21 @@ export const getStockLots = async (filters: LotFilters): Promise<StockLot[]> => 
     }
 };
 
+
 /**
  * Récupère les détails complets d'un lot unique (notamment les tares).
  * @param id Le GUID du lot à récupérer.
+ * @param magasinID L'ID du magasin pour lequel calculer le stock.
  */
-export const getLotById = async (id: string): Promise<LotDetail> => {
+export const getLotById = async (id: string, magasinID: number): Promise<LotDetailFull> => {
     try {
-        const response = await api.get(`/lot/${id}`);
+        // 3. Ajouter 'params' à l'appel api.get
+        const response = await api.get(`/lot/${id}`, {
+            params: { magasinId: magasinID } 
+        });
         return response.data;
     } catch (error) {
-        throw handleNetworkError(error, `getLotById(${id})`);
+        throw handleNetworkError(error, `getLotById(${id}, ${magasinID})`);
     }
 };
 

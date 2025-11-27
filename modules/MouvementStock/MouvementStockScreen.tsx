@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useContext } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { ArrowCircleUp, ArrowCircleDown, Archive, Stack, Barbell } from 'phosphor-react-native';
-import { AuthContext } from '../../contexts/AuthContext'; // Importer votre AuthContext
+import { View, ActivityIndicator, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { 
+    ArrowCircleUp, ArrowCircleDown, Archive, Stack, Barbell, 
+    SlidersHorizontal, CaretDown, CaretUp 
+} from 'phosphor-react-native';
+import { AuthContext } from '../../contexts/AuthContext';
 
 import MouvementStockFilter, { MouvementStockFilters } from './components/MouvementStockFilter';
 import MouvementStockTable from './components/MouvementStockTable';
@@ -15,12 +18,14 @@ const MouvementStockScreen = () => {
 
   const getTodayDateString = () => new Date().toISOString().split('T')[0];
   
-  // 'filters' représente maintenant les filtres "appliqués"
   const [filters, setFilters] = useState<MouvementStockFilters>({
     dateDebut: getTodayDateString(),
     dateFin: getTodayDateString(),
     campagneID: '',
   });
+
+  // État pour gérer la visibilité de l'accordéon de filtres
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   const [mouvements, setMouvements] = useState<MouvementStock[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,28 +52,22 @@ const MouvementStockScreen = () => {
   }, [mouvements]);
 
 
-  // 'fetchMouvements' dépend maintenant de 'filters' (l'état appliqué)
   const fetchMouvements = useCallback(async () => {
     if (!user?.magasinID) {
       setMouvements([]);
       setLoading(false);
       return;
     }
-
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
-      
-      // 'filters' contient les filtres validés par "Appliquer"
       if (filters.dateDebut) queryParams.append('DateDebut', filters.dateDebut);
       if (filters.dateFin) queryParams.append('DateFin', filters.dateFin);
       if (filters.exportateurID) queryParams.append('ExportateurID', filters.exportateurID);
       if (filters.campagneID) queryParams.append('CampagneID', filters.campagneID);
       if (filters.mouvementTypeID) queryParams.append('MouvementTypeID', filters.mouvementTypeID);
       if (filters.sens) queryParams.append('Sens', filters.sens);
-      
       queryParams.append('MagasinID', user.magasinID.toString());
-
       const data = await mouvementApiService.getMouvements(queryParams);
       setMouvements(data);
     } catch (error) {
@@ -76,29 +75,25 @@ const MouvementStockScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, user]); // Se déclenche uniquement si 'filters' (appliqués) change
+  }, [filters, user]); 
 
-  // useEffect pour le fetch initial (inchangé)
   useEffect(() => {
     fetchMouvements();
   }, [fetchMouvements]);
 
-  // --- NOUVELLE FONCTION ---
-  // Met à jour l'état 'filters' avec les filtres validés par l'enfant
+  
   const handleApplyFilters = (newFilters: MouvementStockFilters) => {
     setFilters(newFilters);
-    // Le 'useEffect' sur 'fetchMouvements' se déclenchera
+    setIsFilterVisible(false); // Ferme l'accordéon après application
   };
 
-  // 'handleResetFilters' met à jour l'état 'filters', ce qui
-  // mettra à jour l'état local du composant filtre via les props
   const handleResetFilters = () => {
     setFilters({
       dateDebut: getTodayDateString(),
       dateFin: getTodayDateString(),
       campagneID: ''
     });
-    // Le 'useEffect' sur 'fetchMouvements' se déclenchera
+    setIsFilterVisible(false); // Ferme l'accordéon après réinitialisation
   }
 
   const handleRowPress = (item: MouvementStock) => {
@@ -140,12 +135,28 @@ const MouvementStockScreen = () => {
 
   return (
     <View style={Styles.container}>
-      {/* --- PROPS MISES À JOUR --- */}
-      <MouvementStockFilter 
-        filters={filters}
-        onReset={handleResetFilters}
-        onApply={handleApplyFilters} // 'onValueChange' est remplacé par 'onApply'
-      />
+      {/* Accordéon de filtres moderne */}
+      <View style={localStyles.filterContainer}>
+        <TouchableOpacity 
+          style={localStyles.filterHeader}
+          onPress={() => setIsFilterVisible(prev => !prev)}
+          activeOpacity={0.7}
+        >
+          <View style={localStyles.filterHeaderTitle}>
+            <SlidersHorizontal size={20} color={Colors.primary} />
+            <Text style={localStyles.filterTitle}>Filtres</Text>
+          </View>
+          {isFilterVisible ? <CaretUp size={20} color={Colors.darkGray} /> : <CaretDown size={20} color={Colors.darkGray} />}
+        </TouchableOpacity>
+        
+        {isFilterVisible && (
+          <MouvementStockFilter 
+            filters={filters}
+            onReset={handleResetFilters}
+            onApply={handleApplyFilters}
+          />
+        )}
+      </View>
       
       {loading ? (
         <ActivityIndicator size="large" color={Colors.primary} style={Styles.loader} />
@@ -205,7 +216,7 @@ const localStyles = StyleSheet.create({
     },
     summaryValue: { 
         fontSize: 18, 
-        fontWeight: 'bold', 
+        fontWeight: 'normal', 
         color: Colors.dark, 
         marginTop: 4, 
     },
@@ -215,5 +226,34 @@ const localStyles = StyleSheet.create({
         marginTop: 2, 
         textAlign: 'center' 
     },
+    // Styles pour l'accordéon de filtre
+    filterContainer: {
+      backgroundColor: '#fff',
+      marginHorizontal: 12,
+      marginTop: 16,
+      borderRadius: 12,
+      elevation: 3, 
+      shadowColor: '#000', 
+      shadowOffset: { width: 0, height: 1 }, 
+      shadowOpacity: 0.1, 
+      shadowRadius: 3,
+      overflow: 'hidden',
+    },
+    filterHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      backgroundColor: '#f8f9fa',
+    },
+    filterHeaderTitle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    filterTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: Colors.primary,
+      marginLeft: 10,
+    },
 });
-

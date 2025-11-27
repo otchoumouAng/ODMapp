@@ -7,7 +7,7 @@ export interface MouvementStock {
   campagneID: string;
   exportateurId?: number;
   certificationId?: number;
-  dateMouvement: string; // Nom de propriété corrigé
+  dateMouvement: string; 
   sens: number;
   mouvementTypeId: number;
   objectEnStockID?: string;
@@ -16,22 +16,25 @@ export interface MouvementStock {
   statut: string;
   reference1?: string;
   reference2?: string;
-  poidsBrut: number;       // Nom de propriété corrigé
-  tareSacs: number;        // Nom de propriété corrigé
-  tarePalettes: number;    // Nom de propriété corrigé
-  poidsNetLivre: number;   // Nom de propriété corrigé
-  retentionPoids: number;  // Nom de propriété corrigé
-  poidsNetAccepte: number; // Nom de propriété corrigé
-  creationUtilisateur: string; // Nom de propriété corrigé
+  poidsBrut: number;       
+  tareSacs: number;        
+  tarePalettes: number;    
+  poidsNetLivre: number;   
+  retentionPoids: number;  
+  poidsNetAccepte: number; 
+  
+  nombrePalette?: number; 
+  
+  creationUtilisateur: string; 
   emplacementID?: number;
-  sacTypeId?: number;      // Nom de propriété corrigé
+  sacTypeId?: number;      
   commentaire?: string;
   siteID: number;
   produitID?: number;
   lotID?: string;
-  rowVersion: any;
+  
+  rowVersionKey: any; 
 
-  // Champs joints (déjà en camelCase ou PascalCase selon le backend, on harmonise)
   magasinNom?: string;
   exportateurNom?: string;
   mouvementTypeDesignation?: string;

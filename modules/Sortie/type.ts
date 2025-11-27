@@ -4,7 +4,7 @@
 
 /**
  * Représente l'objet retourné par l'API /api/stock/lots
- * C'est l'objet "item" utilisé dans SortieScreen et TransfertScreen.
+ * C'est l'objet "item" utilisé pour la navigation initiale.
  */
 export interface StockLot {
   lotID: string; // GUID
@@ -32,7 +32,6 @@ export interface StockLot {
 /**
  * Représente l'objet DTO (Data Transfer Object) attendu par l'API
  * POST /api/transfertlot
- * Basé sur l'exemple Postman réussi.
  */
 export interface TransfertDto {
   campagneID: string;
@@ -59,44 +58,58 @@ export interface TransfertDto {
   typeOperationID: number;
   mouvementTypeID: number;
   creationUtilisateur: string;
-  certificationID: number;
-  sacTypeID: number;
+  certificationID: number | null;
+  sacTypeID: number | null;
 }
 
 /**
- * Représente l'objet détaillé retourné par l'API /api/lot/{id}
- * Contient les données de base du lot, notamment les tares.
+ * NOUVEAU Type correspondant à la réponse de /api/lot/{id}
  */
-export interface LotDetail {
-  id: string; // GUID
-  campagneID: string;
-  exportateurID: number;
-  exportateurNom: string;
-  productionID: string | null;
-  numeroProduction: string;
-  typeLotID: number;
-  typeLotDesignation: string;
-  certificationID: number | null; // !! Peut être null
-  certificationDesignation: string;
-  dateLot: string;
-  dateProduction: string | null;
-  numeroLot: string;
-  nombreSacs: number; // Le nombre de sacs TOTAL du lot
-  poidsBrut: number;
-  tareSacs: number; // !! La tare que nous cherchons
-  tarePalettes: number; // !! La tare que nous cherchons
-  poidsNet: number;
-  estQueue: boolean;
-  estManuel: boolean;
-  estReusine: boolean;
-  statut: string;
-  desactive: boolean;
-  creationUtilisateur: string;
-  creationDate: string;
-  modificationUtilisateur: string | null;
-  modificationDate: string | null;
-  rowVersionKey: any;
-  estFictif: boolean;
+export interface LotDetailFull {
+    id: string;
+    campagneID: string;
+    exportateurID: number;
+    exportateurNom: string;
+    productionID: string | null;
+    numeroProduction: string | null;
+    typeLotID: number;
+    typeLotDesignation: string;
+    certificationID: number | null;
+    certificationDesignation: string;
+    dateLot: string;
+    dateProduction: string | null;
+    numeroLot: string;
+    nombreSacs: number;
+    poidsBrut: number;
+    tareSacs: number;
+    tarePalettes: number;
+    poidsNet: number;
+    estQueue: boolean;
+    estManuel: boolean;
+    estReusine: boolean;
+    statut: string;
+    desactive: boolean;
+    creationUtilisateur: string;
+    creationDate: string;
+    modificationUtilisateur: string;
+    modificationDate: string;
+    rowVersionKey: string;
+    estQueueText: string | null;
+    estManuelText: string | null;
+    estReusineText: string | null;
+    estFictif: boolean | null;
+    produitID: number;
+    siteID: number;
+    siteNom: string;
+    produitNom: string;
+    magasinID: number;
+    magasinDesignation: string;
+    nombrePalette: number; 
+    isApproved: boolean;
+    gradeLotID: number;
+    libelleGradeLot: string;
+    typeSacID: number;
+    libelleTypeSac: string;
 }
 
 /**
@@ -121,11 +134,10 @@ export interface Magasin {
  */
 export interface Parametres {
   sites: any | null;
-  campagne: string; // Le champ qui nous intéresse
+  campagne: string;
   exportateur: number;
   exportateurNom: string;
   nomSociete: string;
   adresseSociete: string;
   telSociete: string;
 }
-

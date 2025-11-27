@@ -39,8 +39,8 @@ const MouvementStockDetailModal: React.FC<MouvementStockDetailModalProps> = ({ v
             <DetailRow label="Campagne" value={item.campagneID} />
             <DetailRow label="Type Mouvement" value={item.mouvementTypeDesignation} />
             <DetailRow label="Exportateur" value={item.exportateurNom} />
+            <DetailRow label="Numéro Lot" value={item.reference2} />
             <DetailRow label="Référence 1" value={item.reference1} />
-            <DetailRow label="Référence 2" value={item.reference2} />
             <DetailRow label="Référence 3 (Immat.)" value={item.reference3} />
             <DetailRow label="Sens" value={item.sens === 1 ? 'Entrée' : 'Sortie'} />
             <DetailRow label="Quantité" value={item.quantite} />

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, Button, TouchableOpacity, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { FadersHorizontal, CaretUp, CaretDown, CalendarBlank } from 'phosphor-react-native';
+import { CalendarBlank } from 'phosphor-react-native';
 import * as apiService from '../../Shared/route';
 import { Styles, Colors } from '../../../styles/style';
 
@@ -17,70 +17,64 @@ export interface MouvementStockFilters {
 }
 
 interface MouvementStockFilterProps {
-    // 'filters' représente les filtres "actifs" (ceux appliqués)
     filters: MouvementStockFilters;
-    // 'onReset' est appelé pour réinitialiser les filtres
     onReset: () => void;
-    // --- NOUVELLE PROP ---
-    // 'onApply' est appelé quand l'utilisateur clique sur "Appliquer"
     onApply: (filters: MouvementStockFilters) => void;
 }
 
-// --- LOGIQUE MISE À JOUR ---
 const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, onReset, onApply }) => {
-    const [isExpanded, setIsExpanded] = useState<boolean>(false);
+    // COMPOSANT SIMPLIFIÉ : Plus de gestion d'accordéon interne
     const [dropdownsLoaded, setDropdownsLoaded] = useState<boolean>(false);
     const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
     const [datePickerTarget, setDatePickerTarget] = useState<'dateDebut' | 'dateFin' | null>(null);
 
-    // --- NOUVEL ÉTAT LOCAL ---
-    // 'localFilters' stocke les changements avant qu'ils ne soient appliqués
     const [localFilters, setLocalFilters] = useState<MouvementStockFilters>(filters);
 
     const [exportateurs, setExportateurs] = useState<any[]>([]);
     const [types, setTypes] = useState<any[]>([]);
     const [campagnes, setCampagnes] = useState<string[]>([]);
 
-    // S'assure que l'état local est synchronisé avec les filtres actifs (ex: après un reset)
+    // Synchronise l'état local si les filtres parents changent (ex: après un Reset)
     useEffect(() => {
         setLocalFilters(filters);
     }, [filters]);
 
+    // Chargement des données au montage du composant
     useEffect(() => {
         const loadDropdownData = async () => {
             try {
-                setExportateurs(await apiService.getExportateurs());
-                setTypes(await apiService.getMouvementStockTypes());
-                setCampagnes(await apiService.getCampagnes());
-                setDropdownsLoaded(true);
+                const [exps, typs, camps] = await Promise.all([
+                    apiService.getExportateurs(),
+                    apiService.getMouvementStockTypes(),
+                    apiService.getCampagnes()
+                ]);
+                setExportateurs(exps);
+                setTypes(typs);
+                setCampagnes(camps);
             } catch (error) {
                 console.error("Failed to load filter data", error);
+            } finally {
+                setDropdownsLoaded(true);
             }
         };
 
-        if (isExpanded && !dropdownsLoaded) {
+        if (!dropdownsLoaded) {
             loadDropdownData();
         }
-    }, [isExpanded, dropdownsLoaded]);
+    }, [dropdownsLoaded]);
 
-    // --- NOUVELLE FONCTION ---
-    // Met à jour l'état local, SANS déclencher de rafraîchissement
     const handleLocalValueChange = (name: keyof MouvementStockFilters, value: any) => {
         setLocalFilters(prev => ({ ...prev, [name]: value }));
     };
 
-    // --- NOUVELLE FONCTION ---
-    // Appelée par le bouton "Appliquer"
     const handleApply = () => {
-        onApply(localFilters); // Envoie les filtres locaux au parent
-        setIsExpanded(false); // Ferme le panneau de filtres
+        onApply(localFilters);
     };
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
         setShowDatePicker(Platform.OS === 'ios');
         if (selectedDate && datePickerTarget) {
             const formattedDate = selectedDate.toISOString().split('T')[0];
-            // Met à jour l'état local
             handleLocalValueChange(datePickerTarget, formattedDate);
         }
         setDatePickerTarget(null);
@@ -98,7 +92,8 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
             <Picker
                 selectedValue={selectedValue}
                 onValueChange={onValueChangeCallback}
-                mode="dropdown">
+                mode="dropdown"
+            >
                 <Picker.Item label={`Tous`} value="" style={{ color: '#999999' }} />
                 {items.map(item => (
                     <Picker.Item key={item[valueKey]} label={item[labelKey]} value={item[valueKey].toString()} />
@@ -108,21 +103,11 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
     );
 
     return (
-        <View style={Styles.filterContainer}>
-            <TouchableOpacity style={[localStyles.header,{marginTop:35}]} onPress={() => setIsExpanded(!isExpanded)}>
-                <View style={localStyles.headerLeft}>
-                    <FadersHorizontal size={24} color={Colors.darkGray} />
-                    <Text style={Styles.filterTitle}>Filtres</Text>
-                </View>
-                <View style={localStyles.headerRight}>
-                    <Text style={localStyles.toggleText}>{isExpanded ? 'Masquer' : 'Afficher'}</Text>
-                    {isExpanded ? <CaretUp size={20} color={Colors.primary} /> : <CaretDown size={20} color={Colors.primary} />}
-                </View>
-            </TouchableOpacity>
-
-            {isExpanded && (
-                <ScrollView>
-                    {/* Les Pickers appellent maintenant 'handleLocalValueChange' */}
+        <View style={localStyles.contentContainer}>
+            {!dropdownsLoaded ? (
+                <ActivityIndicator size="small" color={Colors.primary} style={localStyles.loader} />
+            ) : (
+                <>
                     {renderPicker("Exportateurs", localFilters.exportateurID, (val) => handleLocalValueChange('exportateurID', val), exportateurs, 'nom', 'id')}
                     {renderPicker("Types", localFilters.mouvementTypeID, (val) => handleLocalValueChange('mouvementTypeID', val), types, 'designation', 'id')}
 
@@ -161,19 +146,18 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
                             <View style={localStyles.dateButtonContent}>
                                 <CalendarBlank size={20} color={Colors.darkGray} />
                                 <Text style={localStyles.dateText}>
+                                    {/* ## CORRECTION DU BUG ICI : Utilisation de localFilters.dateFin ## */}
                                     {localFilters.dateFin || "Sélectionner une date"}
                                 </Text>
                             </View>
                         </TouchableOpacity>
                     </View>
 
-                    {/* --- BOUTONS MIS À JOUR --- */}
                     <View style={Styles.filterButtonContainer}>
                         <Button title="Réinitialiser" onPress={onReset} color={Colors.secondary} />
-                        {/* --- NOUVEAU BOUTON "APPLIQUER" --- */}
                         <Button title="Rafraichir" onPress={handleApply} color={Colors.primary} />
                     </View>
-                </ScrollView>
+                </>
             )}
 
             {showDatePicker && (
@@ -188,29 +172,10 @@ const MouvementStockFilter: React.FC<MouvementStockFilterProps> = ({ filters, on
     );
 };
 
-// ... (styles locaux inchangés) ...
 const localStyles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingBottom: 10,
-        marginBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.lightGray,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    toggleText: {
-        marginRight: 5,
-        color: Colors.primary,
-        fontWeight: 'bold',
+    contentContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 8
     },
     dateButtonContainer: {
         justifyContent: 'center'
@@ -222,8 +187,10 @@ const localStyles = StyleSheet.create({
     dateText: {
         marginLeft: 10,
         color: '#333',
+    },
+    loader: {
+        paddingVertical: 32,
     }
 });
 
 export default MouvementStockFilter;
-

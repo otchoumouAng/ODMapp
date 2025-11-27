@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { ArrowUpRight, ArrowDownLeft } from 'phosphor-react-native';
+// MODIFICATION: Import de StyleSheet et Archive
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'; 
+import { ArrowUpRight, ArrowDownLeft, Archive } from 'phosphor-react-native';
 import { MouvementStock } from '../type';
 import { Styles, Colors } from '../../../styles/style';
 
@@ -11,7 +12,7 @@ interface MouvementStockCardProps {
 
 const getStatusStyle = (status: string | null | undefined) => {
     switch (status) {
-        case 'VAL':
+        case 'VAL': // Vous pouvez ajuster ce statut si 'AP' (Approuvé) est utilisé
             return {
                 borderColor: Colors.success,
                 statusText: 'Validé',
@@ -48,15 +49,57 @@ const MouvementStockCard: React.FC<MouvementStockCardProps> = ({ item, onPress }
                         <Text style={Styles.mouvementStockCardTypeText} numberOfLines={1}>{item.mouvementTypeDesignation+' - '+item.reference2}</Text>
                         <Text style={Styles.mouvementStockCardDateText}>{new Date(item.dateMouvement).toLocaleDateString()}</Text>
                     </View>
+                    
+                    {/* ==================== MODIFICATION ICI ==================== */}
                     <View style={Styles.mouvementStockCardRow}>
-                        <Text style={Styles.mouvementStockCardPoidsText}>{(item.poidsNetAccepte ?? 0).toFixed(2)} kg</Text>
+                        {/* Conteneur pour Poids et Sacs */}
+                        <View style={localStyles.infoContainer}>
+                            {/* Poids (style importé) */}
+                            <Text style={Styles.mouvementStockCardPoidsText}>{(item.poidsNetAccepte ?? 0).toFixed(2)} kg</Text>
+                            
+                            {/* Séparateur visuel (style local) */}
+                            <Text style={localStyles.separator}>|</Text>
+
+                            {/* Sacs (styles locaux) */}
+                            <Archive size={16} color="#666" style={localStyles.iconSacs} />
+                            <Text style={localStyles.sacsText}>{item.quantite ?? 0} Sacs</Text>
+                        </View>
+                        
+                        {/* Statut (style importé) */}
                         <Text style={[Styles.mouvementStockCardStatusText, { color: statusStyle.statusColor }]}>{statusStyle.statusText}</Text>
                     </View>
+                    {/* ================== FIN DE LA MODIFICATION ================== */}
+
                      <Text style={Styles.mouvementStockCardMagasinText}>{item.magasinNom} | {item.exportateurNom}</Text>
                 </View>
             </View>
         </TouchableOpacity>
     );
 };
+
+// --- STYLES LOCAUX AJOUTÉS ---
+// Styles spécifiques pour les nouveaux éléments,
+// copiés de LotCard pour la cohérence.
+const localStyles = StyleSheet.create({
+    infoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexShrink: 1, // Permet au conteneur de se réduire
+        marginRight: 8, // Marge pour ne pas coller au statut
+    },
+    separator: {
+        fontSize: 14,
+        color: '#ccc',
+        marginHorizontal: 8,
+    },
+    iconSacs: {
+        marginRight: 4,
+    },
+    sacsText: {
+        fontSize: 14, // Assurez-vous que cela correspond à mouvementStockCardPoidsText
+        color: '#444', // Assurez-vous que cela correspond à mouvementStockCardPoidsText
+        fontWeight: '500', // Assurez-vous que cela correspond à mouvementStockCardPoidsText
+    },
+});
 
 export default MouvementStockCard;

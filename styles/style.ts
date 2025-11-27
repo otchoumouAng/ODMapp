@@ -232,7 +232,7 @@ export const Styles = StyleSheet.create({
   },
   mouvementStockCardTypeText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: 'normal',
     color: Colors.textDark,
     flex: 1,
   },

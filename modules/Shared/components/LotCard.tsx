@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Package } from 'phosphor-react-native';
+// MODIFICATION: Import de 'Archive' pour l'icône des sacs
+import { Package, Archive } from 'phosphor-react-native';
 // Assurez-vous que le chemin vers le type Lot est correct
 import { Lot } from '../types/lot'; 
 
@@ -34,11 +35,27 @@ const LotCard: React.FC<LotCardProps> = ({ item, onPress }) => {
                         <Text style={styles.lotNumber} numberOfLines={1}>{item.numeroLot}</Text>
                         <Text style={styles.dateText}>{new Date(item.dateLot).toLocaleDateString()}</Text>
                     </View>
+                    
+                    {/* ==================== MODIFICATION ICI ==================== */}
                     <View style={styles.row}>
-                        {/* LIGNE CORRIGÉE */}
-                        <Text style={styles.poidsText}>{(item.poidsNet ?? 0).toFixed(2)} kg</Text>
+                        {/* Conteneur pour Poids et Sacs */}
+                        <View style={styles.infoContainer}>
+                            {/* Poids */}
+                            <Text style={styles.poidsText}>{(item.poidsNet ?? 0).toFixed(2)} kg</Text>
+                            
+                            {/* Séparateur visuel */}
+                            <Text style={styles.separator}>|</Text>
+
+                            {/* Sacs */}
+                            <Archive size={16} color="#666" style={styles.iconSacs} />
+                            <Text style={styles.sacsText}>{item.nombreSacs ?? 0} Sacs</Text>
+                        </View>
+                        
+                        {/* Statut (reste à droite) */}
                         <Text style={styles.statusText}>{statusStyle.statusText}</Text>
                     </View>
+                    {/* ================== FIN DE LA MODIFICATION ================== */}
+
                      <Text style={styles.subText} numberOfLines={1}>{item.exportateurNom} | {item.campagneID}</Text>
                 </View>
             </View>
@@ -78,12 +95,34 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
-        flex: 1,
+        flexShrink: 1, // Modifié pour éviter que le texte long ne pousse la date
+        marginRight: 8, // Ajout d'une marge
     },
     dateText: {
         fontSize: 12,
         color: '#666',
     },
+    // --- NOUVEAUX STYLES AJOUTÉS ---
+    infoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexShrink: 1, // Permet au conteneur de se réduire
+        marginRight: 8, // Marge pour ne pas coller au statut
+    },
+    separator: {
+        fontSize: 14,
+        color: '#ccc',
+        marginHorizontal: 8,
+    },
+    iconSacs: {
+        marginRight: 4,
+    },
+    sacsText: {
+        fontSize: 14,
+        color: '#444',
+        fontWeight: '500',
+    },
+    // --- FIN DES NOUVEAUX STYLES ---
     poidsText: {
         fontSize: 14,
         color: '#444',
