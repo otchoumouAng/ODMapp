@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator, Modal, Alert } from 'react-native';
-import { DeclaredPalette, Palette } from './type';
-import { getDeclaredPalettes, getPaletteByQRCode, validatePaletteDeclaration } from './routes';
+import { Palette } from './type';
+import { getDeclaredPalettes, getPaletteById, declarePalette } from './routes';
 import { Styles, Colors } from '../../styles/style';
 import { Camera } from 'expo-camera';
 
 const DeclarationPaletteScreen = () => {
-  const [declaredPalettes, setDeclaredPalettes] = useState<DeclaredPalette[]>([]);
+  const [declaredPalettes, setDeclaredPalettes] = useState<Palette[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isCameraVisible, setCameraVisible] = useState<boolean>(false);
   const [scannedPalette, setScannedPalette] = useState<Palette | null>(null);
@@ -27,6 +27,8 @@ const DeclarationPaletteScreen = () => {
       setDeclaredPalettes(palettes);
     } catch (error) {
       console.error("Failed to fetch declared palettes:", error);
+      // Mock data for UI development in case of API failure
+      setDeclaredPalettes([]);
     } finally {
       setLoading(false);
     }
@@ -40,10 +42,11 @@ const DeclarationPaletteScreen = () => {
     setCameraVisible(false);
     setLoading(true);
     try {
-      const palette = await getPaletteByQRCode(data);
+      // The QR code data is the palette ID
+      const palette = await getPaletteById(data);
       setScannedPalette(palette);
     } catch (error) {
-      Alert.alert("Erreur", "Palette non trouvée ou erreur réseau.");
+      Alert.alert("Erreur", "Palette non trouvée ou erreur réseau. Assurez-vous que le QR code contient un ID de palette valide.");
     } finally {
       setLoading(false);
     }
@@ -54,11 +57,11 @@ const DeclarationPaletteScreen = () => {
 
     setValidationLoading(true);
     try {
-      await validatePaletteDeclaration(scannedPalette.id);
+      await declarePalette(scannedPalette);
 
       // Refresh the list after successful validation
       fetchDeclaredPalettes();
-      Alert.alert("Succès", "La palette a été déclarée avec succès.");
+      Alert.alert("Succès", `La palette ${scannedPalette.numero} a été déclarée avec succès.`);
 
     } catch (error) {
       Alert.alert("Erreur", "La déclaration de la palette a échoué.");
@@ -72,12 +75,12 @@ const DeclarationPaletteScreen = () => {
     setScannedPalette(null);
   };
 
-  const renderItem = ({ item }: { item: DeclaredPalette }) => (
+  const renderItem = ({ item }: { item: Palette }) => (
     <View style={localStyles.itemContainer}>
-      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Palette:</Text> {item.numeroPalette}</Text>
-      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Produit:</Text> {item.produitNom}</Text>
-      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Poids Net:</Text> {item.poidsNet} kg</Text>
-      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Déclarée le:</Text> {new Date(item.dateDeclaration).toLocaleString()}</Text>
+      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Palette:</Text> {item.numero}</Text>
+      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Produit:</Text> {item.produitDesignation}</Text>
+      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Poids Net:</Text> {item.poidsNetPalette} kg</Text>
+      <Text style={localStyles.itemText}><Text style={localStyles.bold}>Déclarée le:</Text> {item.dateDeclaration ? new Date(item.dateDeclaration).toLocaleString() : 'N/A'}</Text>
     </View>
   );
 
@@ -120,9 +123,10 @@ const DeclarationPaletteScreen = () => {
                     <Text style={localStyles.modalTitle}>Valider la Palette</Text>
                     {scannedPalette && (
                     <>
-                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Numéro:</Text> {scannedPalette.numeroPalette}</Text>
-                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Produit:</Text> {scannedPalette.produitNom}</Text>
-                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Poids Net:</Text> {scannedPalette.poidsNet} kg</Text>
+                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Numéro:</Text> {scannedPalette.numero}</Text>
+                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Produit:</Text> {scannedPalette.produitDesignation}</Text>
+                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Poids Net:</Text> {scannedPalette.poidsNetPalette} kg</Text>
+                        <Text style={localStyles.itemText}><Text style={localStyles.bold}>Production:</Text> {scannedPalette.numeroProduction}</Text>
                     </>
                     )}
                     {isValidationLoading ? (

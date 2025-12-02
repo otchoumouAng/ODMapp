@@ -1,22 +1,54 @@
 /**
- * Represents the data of a palette returned by the API after scanning a QR code.
+ * Represents the data of a palette, matching the C# Palette model from the API.
  */
 export interface Palette {
-  id: string;
-  numeroPalette: string;
-  produitNom: string;
-  poidsNet: number;
-  dateCreation: string;
-  // Add other relevant fields based on the actual API response
-}
+  id: string; // Guid
+  ordreDeProductionID: string; // Guid
+  numeroProduction: string;
+  annee: number;
+  semaine: number;
+  numero: string;
 
-/**
- * Represents a palette that has already been declared and is displayed in the list.
- */
-export interface DeclaredPalette {
-  id: string;
-  numeroPalette: string;
-  produitNom: string;
-  poidsNet: number;
-  dateDeclaration: string;
+  produitID?: number | null;
+  produitDesignation: string;
+  typeProduitID?: number | null;
+  typeProduitDesignation: string;
+
+  nbreUnite: number;
+  codeConditionnement: number;
+  condDesignation: string;
+  condRefDesignation: string;
+
+  nomArticle: string;
+  codeArticle: string;
+  codeReferenceConditionnement?: number | null;
+  nbreUniteParPalette: number;
+  uniteDePoidsID: number;
+
+  poidsBrutUnitaire: number;
+  tareUnitaireEmballage: number;
+  poidsBrutPalette: number;
+  tareEmballagePalette: number;
+  poidsNetPalette: number;
+
+  bestBeforeDate?: string | null; // DateTime
+  nbreEtiquetteA4Demande: number;
+  nbreEtiquetteA4Imprime: number;
+  nbreEtiquetteA5Demande: number;
+  nbreEtiquetteA5Imprime: number;
+  dateFabrication?: string | null; // DateTime
+
+  statut: string;
+  qaStatut: string;
+  codeSSCC: string;
+  dateDeclaration?: string | null; // DateTime
+
+  stockMagasinID?: number | null;
+  stockEmplacement: string;
+
+  creationUtilisateur: string;
+  modificationDate?: string | null; // DateTime
+  modificationUtilisateur: string;
+  desactive: boolean;
+  rowVersionKey: string; // byte[] is often serialized as a base64 string
 }

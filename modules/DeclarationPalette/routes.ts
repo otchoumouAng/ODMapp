@@ -1,40 +1,46 @@
 import { api, handleNetworkError } from '../Shared/route';
-import { Palette, DeclaredPalette } from './type';
+import { Palette } from './type';
 
 /**
- * Fetches palette details from the API using a QR code.
- * @param qrCode The QR code string scanned by the user.
+ * Fetches palette details from the API using its ID.
+ * The QR code should contain the palette's unique ID (GUID).
+ * @param id The unique identifier of the palette.
  */
-export const getPaletteByQRCode = async (qrCode: string): Promise<Palette> => {
+export const getPaletteById = async (id: string): Promise<Palette> => {
   try {
-    const response = await api.get(`/declare/${qrCode}`);
+    // The endpoint is GET /api/palette/{id}
+    const response = await api.get(`/palette/${id}`);
     return response.data;
   } catch (error) {
-    throw handleNetworkError(error, `getPaletteByQRCode(${qrCode})`);
+    throw handleNetworkError(error, `getPaletteById(${id})`);
   }
 };
 
 /**
- * Validates the declaration of a palette.
- * @param paletteId The ID of the palette to declare.
+ * Declares a palette and creates a stock movement.
+ * @param palette The full palette object to be declared.
  */
-export const validatePaletteDeclaration = async (paletteId: string): Promise<any> => {
+export const declarePalette = async (palette: Palette): Promise<Palette> => {
   try {
-    // Assuming the endpoint is /api/palette/declare and it's a POST request
-    const response = await api.post('/palette/declare', { paletteId });
+    // The endpoint is POST /api/palette/declarer
+    const response = await api.post('/palette/declarer', palette);
     return response.data;
   } catch (error) {
-    throw handleNetworkError(error, `validatePaletteDeclaration(${paletteId})`);
+    throw handleNetworkError(error, `declarePalette(${palette.id})`);
   }
 };
 
 /**
- * Fetches the list of already declared palettes.
+ * Fetches the list of declared palettes.
+ * Assumes that "declared" palettes have a specific status we can filter by.
  */
-export const getDeclaredPalettes = async (): Promise<DeclaredPalette[]> => {
+export const getDeclaredPalettes = async (): Promise<Palette[]> => {
     try {
-        // Assuming the endpoint is /api/palettes/declared
-        const response = await api.get('/palettes/declared');
+        // The endpoint is GET /api/palette, using a filter
+        const params = new URLSearchParams();
+        params.append('Statut', 'Declared'); // This is an assumption, the exact filter may vary
+
+        const response = await api.get('/palette', { params });
         return response.data;
     } catch (error) {
         throw handleNetworkError(error, 'getDeclaredPalettes');
