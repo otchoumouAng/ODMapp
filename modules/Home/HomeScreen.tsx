@@ -16,6 +16,7 @@ const modules = [
   { id: "sortie", title: "Sortie", icon: Truck, screen: "Sortie" },
   { id: "entre", title: "Entrée", icon: TrayArrowDown, screen: "Entre" },
   { id: "mouvementStock", title: "Mouvement", icon: ArrowsLeftRight, screen: "MouvementStock" },
+  { id: "declarationPalette", title: "Déclaration Palette", icon: Package, screen: "DeclarationPalette" },
 ];
 
 export default function HomeScreen() {

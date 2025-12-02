@@ -11,6 +11,7 @@ import SortieScreen from '../modules/Sortie/SortieScreen';
 import TransfertScreen from '../modules/Sortie/TransfertScreen';
 import ReceptionScreen from '../modules/Entre/ReceptionScreen';
 import StockScreen from '../modules/Stock/StockScreen';
+import DeclarationPaletteScreen from '../modules/DeclarationPalette/DeclarationPaletteScreen';
 // import Palette from '../screens/Palette';
 // import OrderPlaceholder from '../screens/OrderPlaceholder';
 import { Colors } from '../styles/style';
@@ -56,6 +57,11 @@ function HomeStack() {
         name="Stock"
         component={StockScreen}
         options={{ headerTitle: 'Stock' }}
+      />
+      <Stack.Screen
+        name="DeclarationPalette"
+        component={DeclarationPaletteScreen}
+        options={{ headerTitle: 'Déclaration Palette' }}
       />
       
     </Stack.Navigator>
